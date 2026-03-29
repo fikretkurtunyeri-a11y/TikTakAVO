@@ -81,12 +81,42 @@ body{
 }
 
 /* ══════════════════════════════════════════════
+   HOME BUTTON
+   ══════════════════════════════════════════════ */
+.home-btn {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 600;
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text2);
+  font-family: var(--font);
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 8px 14px;
+  cursor: pointer;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all var(--speed);
+  box-shadow: var(--shadow1);
+}
+.home-btn:hover {
+  border-color: var(--teal);
+  background: var(--tealLight);
+  color: var(--teal);
+}
+
+/* ══════════════════════════════════════════════
    APP LAYOUT
    ══════════════════════════════════════════════ */
 .app{max-width:820px;margin:0 auto;padding:12px 16px;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;}
 
 /* Top bar */
-.topbar{display:flex;justify-content:space-between;align-items:center;padding:6px 0;margin-bottom:8px;flex-shrink:0;}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:6px 0 6px 0;margin-bottom:8px;flex-shrink:0;}
 .logo{font-size:1.5rem;font-weight:800;color:var(--teal);display:flex;align-items:center;gap:8px;}
 .logo-clock{font-size:1.8rem;}
 .top-btns{display:flex;gap:6px;align-items:center;}
@@ -449,6 +479,7 @@ body.simple-mode .user-card:hover{transform:none;}
   .clock-wrap{width:min(260px,75vw);height:min(286px,83vw);}
   .welcome h1{font-size:1.7rem;}
   .user-grid{grid-template-columns:1fr 1fr;}
+  .home-btn{top:8px;left:8px;padding:6px 10px;font-size:.78rem;}
 }
 @media(min-width:700px){
   .clock-wrap{width:320px;height:352px;}
@@ -456,6 +487,10 @@ body.simple-mode .user-card:hover{transform:none;}
 </style>
 </head>
 <body>
+
+<!-- Home button -->
+<a href="https://fikretkurtunyeri-a11y.github.io/ITO/" class="home-btn" title="Tilbake til alle apper">🏠 Alle apper</a>
+
 <div class="app">
 
   <!-- TOPBAR -->
@@ -622,10 +657,9 @@ const S = {
   setH: 12, setM: 0, dragging: null,
   matchPairs: [], matchSel: null, matchCount: 0,
   spokenIntro: false,
-  // User session
   currentUser: null,
-  sessionScore: 0, // score accumulated this session
-  prevSessionScore: null, // last session's total score
+  sessionScore: 0,
+  prevSessionScore: null,
 };
 
 /* ════════════════════════════════════════════════════════════════
@@ -638,7 +672,6 @@ function renderUserScreen() {
 
   let html = `<h1>🕐 TikTakAVO</h1><p style="color:var(--text2);font-size:1rem;">Hvem spiller?</p>`;
 
-  // Existing users
   if (users.length > 0) {
     html += `<div class="user-section"><div class="user-section-title">👋 Velkommen tilbake</div><div class="user-grid">`;
     users.forEach(u => {
@@ -656,7 +689,6 @@ function renderUserScreen() {
     html += `</div></div>`;
   }
 
-  // New users
   if (available.length > 0) {
     html += `<div class="user-section" style="margin-top:12px;"><div class="user-section-title">✨ Ny bruker</div><div class="user-grid">`;
     available.forEach(a => {
@@ -693,7 +725,6 @@ function createUser(id) {
   };
   saveUser(newUser);
 
-  // Show PIN reveal
   const emoji = def ? def.emoji : '👤';
   const name = def ? def.name : id;
   const ps = document.getElementById('pinScreen');
@@ -788,7 +819,6 @@ function loginUser(id) {
   setCurrentUserId(id);
   S.currentUser = user;
 
-  // Load user data into game state
   S.stars = user.stars || {1:0,2:0,3:0,4:0};
   S.unlocked = user.unlocked || [1];
   S.best = user.best || 0;
@@ -798,26 +828,21 @@ function loginUser(id) {
   S.prevSessionScore = user.prevSessionScore;
   S.sessionScore = 0;
 
-  // Set base score for accumulation
   user._baseScore = user.score || 0;
   saveUser(user);
 
-  // Apply settings
   document.body.classList.toggle('simple-mode', S.simple);
   document.getElementById('simpleToggle').classList.toggle('active', S.simple);
 
-  // Update user welcome bar
   const def = AVAILABLE_USERS.find(a => a.id === id);
   const emoji = def ? def.emoji : '👤';
   const name = def ? def.name : id;
   document.getElementById('userWelcomeBar').innerHTML =
     `<button class="tbtn" onclick="logoutUser()" title="Bytt bruker" style="font-size:0.85rem;">${emoji} ${name} ↺</button>`;
 
-  // Update last played
   user.lastPlayed = new Date().toISOString().split('T')[0];
   saveUser(user);
 
-  // Show self-competition info
   renderSelfCompete();
 
   showScr('scrWelcome');
@@ -825,7 +850,6 @@ function loginUser(id) {
 }
 
 function logoutUser() {
-  // Save session score as prevSessionScore
   if (S.currentUser) {
     const user = getUserById(S.currentUser.id);
     if (user) {
@@ -1056,7 +1080,6 @@ function clockSVG(h, m, opts={}) {
   </svg>`;
 }
 
-/* WELCOME CLOCK */
 function drawWelcomeClock(){
   const el=document.getElementById('welcomeClock');
   if(el){const now=new Date();el.innerHTML=clockSVG(now.getHours()%12||12, Math.floor(now.getMinutes()/5)*5, {w:140,id:'wclk'});}
@@ -1474,7 +1497,6 @@ function finishGame(){
   const starStr='⭐'.repeat(stars)+'☆'.repeat(3-stars);
   const msgs=['Prøv igjen – du klarer det!','Bra innsats!','Veldig bra!','Perfekt! Fantastisk!'];
 
-  // Self-competition messages
   let selfMsg = '';
   if (S.currentUser) {
     const user = getUserById(S.currentUser.id);
@@ -1561,8 +1583,6 @@ function save(){
       user.simple = S.simple;
       user.sound = S.sound;
       user.slow = S.slow;
-      // Keep cumulative total score updated
-      // We track sessionScore separately; total = base + session
       if (!user._baseScore && user._baseScore !== 0) user._baseScore = user.score || 0;
       user.score = user._baseScore + S.sessionScore;
       user.lastPlayed = new Date().toISOString().split('T')[0];
@@ -1572,7 +1592,6 @@ function save(){
 }
 
 function load(){
-  // On app start, check if there's a current user session
   const userId = getCurrentUserId();
   if (userId) {
     const user = getUserById(userId);
@@ -1581,7 +1600,6 @@ function load(){
       return;
     }
   }
-  // No valid session, show user screen
   renderUserScreen();
   showScr('scrUsers');
 }
