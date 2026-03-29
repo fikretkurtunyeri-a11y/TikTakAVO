@@ -1,0 +1,1598 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>TikTakAVO – Lær å lese klokken</title>
+<style>
+/* ══════════════════════════════════════════════
+   CSS VARIABLES & THEME
+   ══════════════════════════════════════════════ */
+:root {
+  --bg: #FFF5EE;
+  --bg2: #FFEEE0;
+  --card: #FFFFFF;
+  --text: #2D3748;
+  --text2: #5A6578;
+  --textMuted: #8896A6;
+  --teal: #44CCBB;
+  --tealDark: #35A898;
+  --tealLight: #E0F7F4;
+  --orange: #F28C5A;
+  --orangeLight: #FFF0E8;
+  --green: #5EC26A;
+  --greenLight: #E8F8EA;
+  --red: #E85D5D;
+  --redLight: #FFECEC;
+  --gold: #F5B83D;
+  --goldLight: #FFF8E8;
+  --purple: #A87DE8;
+  --pink: #E87DAE;
+  --blue: #5A9EF2;
+  --border: #E8DDD2;
+  --shadow1: 0 2px 12px rgba(0,0,0,0.06);
+  --shadow2: 0 6px 28px rgba(0,0,0,0.10);
+  --shadow3: 0 12px 40px rgba(0,0,0,0.14);
+  --r-sm: 14px;
+  --r-md: 20px;
+  --r-lg: 28px;
+  --r-xl: 36px;
+  --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --speed: 0.3s;
+  --clockFrame: #44CCBB;
+  --clockFace: #FFFFFF;
+  --clockHourHand: #3A3A3A;
+  --clockMinuteHand: #F28C5A;
+  --clockCenter: #44CCBB;
+}
+
+body.simple-mode {
+  --bg: #FFFFFF;
+  --bg2: #F5F5F5;
+  --card: #FFFFFF;
+  --text: #111111;
+  --text2: #333333;
+  --teal: #008080;
+  --tealLight: #F0F8F8;
+  --orange: #CC5500;
+  --green: #228822;
+  --greenLight: #F0F8F0;
+  --red: #CC2222;
+  --redLight: #FFF0F0;
+  --border: #CCCCCC;
+  --shadow1: 0 1px 4px rgba(0,0,0,0.08);
+  --shadow2: 0 2px 8px rgba(0,0,0,0.10);
+  --speed: 0s;
+  --clockFrame: #008080;
+  --clockHourHand: #000000;
+  --clockMinuteHand: #CC5500;
+  --clockCenter: #008080;
+}
+
+/* ══════════════════════════════════════════════
+   RESET & BASE
+   ══════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:18px;-webkit-tap-highlight-color:transparent;}
+body{
+  font-family:var(--font);background:var(--bg);color:var(--text);
+  min-height:100vh;min-height:100dvh;overflow-x:hidden;
+  transition:background var(--speed), color var(--speed);
+}
+
+/* ══════════════════════════════════════════════
+   APP LAYOUT
+   ══════════════════════════════════════════════ */
+.app{max-width:820px;margin:0 auto;padding:12px 16px;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;}
+
+/* Top bar */
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:6px 0;margin-bottom:8px;flex-shrink:0;}
+.logo{font-size:1.5rem;font-weight:800;color:var(--teal);display:flex;align-items:center;gap:8px;}
+.logo-clock{font-size:1.8rem;}
+.top-btns{display:flex;gap:6px;align-items:center;}
+.tbtn{
+  background:var(--card);border:2px solid var(--border);border-radius:var(--r-sm);
+  padding:7px 13px;font-size:0.85rem;cursor:pointer;font-family:var(--font);
+  font-weight:700;color:var(--text2);min-height:40px;transition:all var(--speed);
+}
+.tbtn:hover{border-color:var(--teal);}
+.tbtn.active{background:var(--tealLight);border-color:var(--teal);color:var(--teal);}
+.ibtn{
+  background:none;border:none;font-size:1.4rem;padding:6px;cursor:pointer;
+  border-radius:var(--r-sm);min-height:40px;min-width:40px;display:flex;
+  align-items:center;justify-content:center;
+}
+.ibtn:hover{background:var(--bg2);}
+
+/* Stats bar */
+.stats{
+  display:flex;gap:14px;align-items:center;padding:10px 16px;
+  background:var(--card);border-radius:var(--r-md);box-shadow:var(--shadow1);
+  margin-bottom:10px;flex-shrink:0;flex-wrap:wrap;justify-content:center;
+}
+.stat{display:flex;align-items:center;gap:5px;font-size:1.05rem;font-weight:700;}
+.stat em{font-style:normal;font-size:1.2rem;}
+
+/* Screens */
+.scr{display:none;flex:1;flex-direction:column;}
+.scr.on{display:flex;}
+
+/* ══════════════════════════════════════════════
+   BUTTONS
+   ══════════════════════════════════════════════ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:60px;padding:14px 24px;font-size:1.2rem;font-weight:700;
+  font-family:var(--font);border:none;border-radius:var(--r-md);cursor:pointer;
+  transition:transform var(--speed), box-shadow var(--speed), background var(--speed);
+  touch-action:manipulation;user-select:none;-webkit-user-select:none;text-align:center;line-height:1.3;
+}
+.btn:active{transform:scale(0.96);}
+.btn-teal{background:var(--teal);color:#FFF;box-shadow:0 4px 14px rgba(68,204,187,0.35);}
+.btn-teal:hover{background:var(--tealDark);}
+.btn-outline{background:var(--card);color:var(--text);border:2px solid var(--border);box-shadow:var(--shadow1);}
+.btn-outline:hover{border-color:var(--teal);background:var(--tealLight);}
+.btn-sm{min-height:46px;padding:10px 16px;font-size:1rem;}
+
+/* Answer buttons */
+.abtn{
+  background:var(--card);color:var(--text);border:3px solid var(--border);
+  box-shadow:var(--shadow1);min-height:68px;font-size:1.3rem;font-weight:700;
+  width:100%;border-radius:var(--r-lg);position:relative;overflow:hidden;
+  font-family:var(--font);cursor:pointer;padding:14px 16px;
+  transition:all var(--speed);touch-action:manipulation;display:flex;
+  align-items:center;justify-content:center;gap:8px;text-align:center;
+}
+.abtn:hover{border-color:var(--teal);box-shadow:var(--shadow2);transform:translateY(-2px);}
+body.simple-mode .abtn:hover{transform:none;}
+.abtn .spk{opacity:0.4;font-size:0.9rem;margin-left:4px;cursor:pointer;}
+.abtn .spk:hover{opacity:1;}
+
+/* Answer states */
+.abtn.correct-answer{
+  border-color:var(--green);background:var(--greenLight);
+  animation:correctPop 0.4s ease;
+}
+.abtn.wrong-answer{
+  border-color:var(--red);background:var(--redLight);opacity:0.6;
+  animation:wrongShake 0.4s ease;
+}
+body.simple-mode .abtn.correct-answer{animation:none;}
+body.simple-mode .abtn.wrong-answer{animation:none;}
+
+@keyframes correctPop {
+  0%{transform:scale(1);}30%{transform:scale(1.08);}60%{transform:scale(0.97);}100%{transform:scale(1);}
+}
+@keyframes wrongShake {
+  0%{transform:translateX(0);}20%{transform:translateX(-8px);}40%{transform:translateX(8px);}60%{transform:translateX(-5px);}80%{transform:translateX(5px);}100%{transform:translateX(0);}
+}
+
+/* ══════════════════════════════════════════════
+   WELCOME SCREEN
+   ══════════════════════════════════════════════ */
+.welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:20px;padding:16px 0;}
+.welcome h1{font-size:2rem;font-weight:800;color:var(--text);letter-spacing:-0.5px;}
+.welcome p{font-size:1.1rem;color:var(--text2);max-width:400px;line-height:1.5;}
+
+.mode-grid{display:flex;flex-direction:column;gap:10px;width:100%;max-width:420px;}
+.mcard{
+  display:flex;align-items:center;gap:14px;padding:16px 18px;
+  background:var(--card);border:3px solid var(--border);border-radius:var(--r-lg);
+  cursor:pointer;transition:all var(--speed);box-shadow:var(--shadow1);text-align:left;
+  font-family:var(--font);width:100%;
+}
+.mcard:hover{border-color:var(--teal);box-shadow:var(--shadow2);transform:translateY(-3px);}
+body.simple-mode .mcard:hover{transform:none;}
+.mcard-ico{font-size:2.2rem;flex-shrink:0;width:52px;height:52px;background:var(--tealLight);
+  border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.mcard-txt{flex:1;}
+.mcard-t{font-size:1.15rem;font-weight:700;margin-bottom:1px;}
+.mcard-d{font-size:0.85rem;color:var(--textMuted);}
+
+/* ══════════════════════════════════════════════
+   LEVEL SELECT - ANIMAL CARDS
+   ══════════════════════════════════════════════ */
+.lvl-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:420px;}
+.lvl-card{
+  display:flex;flex-direction:column;align-items:center;gap:6px;padding:18px 12px;
+  background:var(--card);border:3px solid var(--border);border-radius:var(--r-lg);
+  cursor:pointer;transition:all var(--speed);box-shadow:var(--shadow1);font-family:var(--font);
+  position:relative;overflow:hidden;
+}
+.lvl-card:hover{border-color:var(--teal);box-shadow:var(--shadow2);transform:translateY(-3px);}
+body.simple-mode .lvl-card:hover{transform:none;}
+.lvl-card.locked{opacity:0.45;cursor:not-allowed;filter:grayscale(0.4);}
+.lvl-card.locked:hover{transform:none;border-color:var(--border);box-shadow:var(--shadow1);}
+.lvl-animal{font-size:3rem;line-height:1;position:relative;}
+.lvl-lock{position:absolute;bottom:-4px;right:-8px;font-size:1.2rem;background:var(--card);border-radius:50%;padding:2px;}
+.lvl-name{font-size:1.05rem;font-weight:700;text-align:center;}
+.lvl-desc{font-size:0.8rem;color:var(--textMuted);text-align:center;}
+.lvl-stars{font-size:0.95rem;letter-spacing:2px;}
+
+/* ══════════════════════════════════════════════
+   GAME AREA
+   ══════════════════════════════════════════════ */
+.game{flex:1;display:flex;flex-direction:column;align-items:center;gap:14px;padding:4px 0;}
+.instruction{
+  font-size:1.3rem;font-weight:700;text-align:center;color:var(--text);
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;
+}
+.replay{
+  background:var(--tealLight);border:2px solid var(--teal);color:var(--teal);
+  border-radius:50%;width:42px;height:42px;font-size:1.1rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:all var(--speed);
+}
+.replay:hover{background:var(--teal);color:#FFF;}
+
+/* Progress bar */
+.pbar{width:100%;max-width:420px;height:8px;background:var(--bg2);border-radius:4px;overflow:hidden;flex-shrink:0;}
+.pfill{height:100%;background:linear-gradient(90deg,var(--teal),var(--green));border-radius:4px;transition:width 0.5s ease;}
+
+/* Answer grid */
+.agrid{display:grid;gap:10px;width:100%;max-width:440px;}
+.agrid.c1{grid-template-columns:1fr;}
+.agrid.c2{grid-template-columns:1fr 1fr;}
+.agrid.c3{grid-template-columns:1fr 1fr 1fr;}
+
+/* Feedback */
+.fb{text-align:center;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;}
+.fb-text{font-size:1.3rem;font-weight:800;}
+.fb-text.ok{color:var(--green);}
+.fb-text.no{color:var(--red);}
+.fb-mascot{font-size:2.2rem;line-height:1;}
+body.simple-mode .fb-mascot{display:none;}
+
+/* ══════════════════════════════════════════════
+   SET MODE
+   ══════════════════════════════════════════════ */
+.set-target{font-size:1.7rem;font-weight:800;color:var(--teal);text-align:center;}
+.set-hint{font-size:0.95rem;color:var(--textMuted);text-align:center;}
+.set-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+
+/* ══════════════════════════════════════════════
+   MATCH MODE
+   ══════════════════════════════════════════════ */
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:500px;}
+.mchip{
+  min-height:76px;display:flex;align-items:center;justify-content:center;padding:10px;
+  background:var(--card);border:3px solid var(--border);border-radius:var(--r-md);
+  cursor:pointer;font-size:1.1rem;font-weight:700;font-family:var(--font);text-align:center;
+  transition:all var(--speed);box-shadow:var(--shadow1);
+}
+.mchip.sel{border-color:var(--teal);background:var(--tealLight);}
+.mchip.hit{border-color:var(--green);background:var(--greenLight);opacity:0.6;cursor:default;animation:correctPop 0.35s ease;}
+.mchip.miss{border-color:var(--red);background:var(--redLight);animation:wrongShake 0.35s ease;}
+.mchip svg{width:65px;height:65px;}
+
+/* ══════════════════════════════════════════════
+   CLOCK SVG
+   ══════════════════════════════════════════════ */
+.clock-wrap{position:relative;width:min(310px,78vw);height:min(340px,86vw);flex-shrink:0;}
+.clock-wrap.interactive{cursor:grab;}
+.clock-wrap.interactive:active{cursor:grabbing;}
+.clock-svg{width:100%;height:100%;}
+
+/* ══════════════════════════════════════════════
+   CELEBRATIONS & EFFECTS
+   ══════════════════════════════════════════════ */
+.celeb{
+  position:fixed;top:0;left:0;width:100%;height:100%;display:none;
+  align-items:center;justify-content:center;z-index:1000;pointer-events:none;
+}
+.celeb.on{display:flex;}
+.celeb-inner{text-align:center;animation:celebBounce 0.6s ease-out;}
+body.simple-mode .celeb{display:none!important;}
+
+@keyframes celebBounce {
+  0%{transform:scale(0.3) rotate(-10deg);opacity:0;}
+  50%{transform:scale(1.15) rotate(3deg);opacity:1;}
+  70%{transform:scale(0.95) rotate(-1deg);}
+  100%{transform:scale(1) rotate(0deg);opacity:1;}
+}
+
+.confetti{position:fixed;pointer-events:none;z-index:999;border-radius:3px;}
+body.simple-mode .confetti{display:none!important;}
+
+.star-float{
+  position:fixed;pointer-events:none;z-index:998;font-size:1.6rem;
+  animation:starRise 1.2s ease-out forwards;
+}
+body.simple-mode .star-float{display:none!important;}
+
+@keyframes starRise {
+  0%{opacity:1;transform:translateY(0) scale(0.5);}
+  100%{opacity:0;transform:translateY(-120px) scale(1.3);}
+}
+
+.wrong-flash{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(232,93,93,0.08);z-index:997;pointer-events:none;
+  animation:flashFade 0.5s ease forwards;
+}
+body.simple-mode .wrong-flash{display:none!important;}
+
+@keyframes flashFade {
+  0%{opacity:1;}100%{opacity:0;}
+}
+
+/* ══════════════════════════════════════════════
+   SETTINGS
+   ══════════════════════════════════════════════ */
+.overlay{
+  display:none;position:fixed;top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,0.35);z-index:500;align-items:center;justify-content:center;padding:20px;
+}
+.overlay.on{display:flex;}
+.scard{background:var(--card);border-radius:var(--r-xl);padding:28px 22px;max-width:400px;width:100%;box-shadow:var(--shadow3);max-height:90vh;overflow-y:auto;}
+.stitle{font-size:1.35rem;font-weight:800;margin-bottom:18px;text-align:center;}
+.srow{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--border);}
+.srow:last-of-type{border-bottom:none;}
+.slbl{font-size:1.05rem;font-weight:600;}
+.toggle{
+  position:relative;width:52px;height:28px;border-radius:14px;background:#CBD5E0;
+  cursor:pointer;transition:background 0.3s;border:none;padding:0;
+}
+.toggle.on{background:var(--green);}
+.toggle::after{
+  content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;
+  background:#FFF;border-radius:50%;transition:transform 0.3s;
+}
+.toggle.on::after{transform:translateX(24px);}
+
+.danger-btn{margin-top:14px;width:100%;background:var(--redLight);color:var(--red);
+  border:2px solid #FEC8C8;border-radius:var(--r-md);padding:12px;font-size:1rem;
+  font-weight:700;cursor:pointer;font-family:var(--font);}
+
+/* Back row */
+.backrow{display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-shrink:0;}
+.backrow .lbl{font-size:0.9rem;color:var(--textMuted);font-weight:600;}
+
+/* ══════════════════════════════════════════════
+   USER SELECTION SCREEN
+   ══════════════════════════════════════════════ */
+.user-screen{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:flex-start;text-align:center;gap:16px;padding:10px 0;
+  overflow-y:auto;
+}
+.user-screen h1{font-size:1.8rem;font-weight:800;color:var(--text);margin-top:8px;}
+.user-section{width:100%;max-width:420px;}
+.user-section-title{
+  font-size:1rem;font-weight:700;color:var(--text2);
+  margin-bottom:10px;text-align:left;padding-left:4px;
+}
+.user-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+.user-card{
+  display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px 10px;
+  background:var(--card);border:3px solid var(--border);border-radius:var(--r-lg);
+  cursor:pointer;transition:all var(--speed);box-shadow:var(--shadow1);
+  font-family:var(--font);width:100%;position:relative;
+}
+.user-card:hover{border-color:var(--teal);box-shadow:var(--shadow2);transform:translateY(-2px);}
+body.simple-mode .user-card:hover{transform:none;}
+.user-card .user-emoji{font-size:2.6rem;line-height:1;}
+.user-card .user-name{font-size:1.1rem;font-weight:700;}
+.user-card .user-info{font-size:0.75rem;color:var(--textMuted);}
+.user-card.new-user{border-style:dashed;border-color:var(--teal);opacity:0.85;}
+.user-card.new-user:hover{opacity:1;}
+
+/* PIN screen */
+.pin-screen{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;text-align:center;gap:16px;padding:20px 0;
+}
+.pin-title{font-size:1.4rem;font-weight:700;}
+.pin-user-display{font-size:3rem;line-height:1;}
+.pin-dots{
+  display:flex;gap:12px;justify-content:center;margin:10px 0;
+}
+.pin-dot{
+  width:22px;height:22px;border-radius:50%;
+  border:3px solid var(--border);background:var(--card);
+  transition:all 0.2s;
+}
+.pin-dot.filled{background:var(--teal);border-color:var(--teal);}
+.pin-dot.error{background:var(--red);border-color:var(--red);animation:wrongShake 0.4s ease;}
+
+.pin-pad{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
+  max-width:280px;width:100%;
+}
+.pin-key{
+  min-height:64px;font-size:1.6rem;font-weight:700;
+  background:var(--card);border:2px solid var(--border);border-radius:var(--r-md);
+  cursor:pointer;font-family:var(--font);transition:all var(--speed);
+  display:flex;align-items:center;justify-content:center;
+  touch-action:manipulation;user-select:none;-webkit-user-select:none;
+}
+.pin-key:hover{border-color:var(--teal);background:var(--tealLight);}
+.pin-key:active{transform:scale(0.95);}
+.pin-key.del{font-size:1.2rem;color:var(--red);}
+.pin-key.empty{visibility:hidden;}
+
+/* New user PIN reveal */
+.pin-reveal{
+  background:var(--tealLight);border:3px solid var(--teal);
+  border-radius:var(--r-xl);padding:28px 24px;max-width:340px;width:100%;
+  text-align:center;
+}
+.pin-reveal .big-pin{
+  font-size:3rem;font-weight:800;color:var(--teal);
+  letter-spacing:10px;margin:10px 0;
+}
+.pin-reveal .pin-msg{
+  font-size:1.1rem;color:var(--text2);font-weight:600;
+}
+
+/* User welcome bar */
+.user-welcome-bar{
+  display:flex;align-items:center;gap:8px;padding:6px 14px;
+  background:var(--tealLight);border-radius:var(--r-sm);
+  font-size:0.9rem;font-weight:600;color:var(--teal);
+}
+
+/* Self-competition banner */
+.self-compete{
+  background:var(--goldLight);border:2px solid var(--gold);
+  border-radius:var(--r-md);padding:12px 16px;
+  text-align:center;font-weight:700;color:var(--text);
+  font-size:1rem;animation:correctPop 0.5s ease;
+}
+
+/* ══════════════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════════════ */
+@media(max-width:480px){
+  html{font-size:16px;}
+  .clock-wrap{width:min(260px,75vw);height:min(286px,83vw);}
+  .welcome h1{font-size:1.7rem;}
+  .user-grid{grid-template-columns:1fr 1fr;}
+}
+@media(min-width:700px){
+  .clock-wrap{width:320px;height:352px;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="logo"><span class="logo-clock">🕐</span>TikTakAVO</div>
+    <div class="top-btns">
+      <span id="userWelcomeBar"></span>
+      <button class="tbtn" id="simpleToggle" onclick="toggleSimple()">🧠 Enkel</button>
+      <button class="ibtn" onclick="openSettings()" title="Innstillinger">⚙️</button>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats" id="stats" style="display:none">
+    <div class="stat"><em>⭐</em><span id="sScore">0</span></div>
+    <div class="stat"><em>🔥</em><span id="sStreak">0</span></div>
+    <div class="stat"><em>📊</em><span id="sProg">0 / 20</span></div>
+  </div>
+
+  <!-- USER SELECT SCREEN -->
+  <div class="scr on" id="scrUsers">
+    <div class="user-screen" id="userScreen"></div>
+  </div>
+
+  <!-- PIN ENTRY SCREEN -->
+  <div class="scr" id="scrPin">
+    <div class="pin-screen" id="pinScreen"></div>
+  </div>
+
+  <!-- WELCOME -->
+  <div class="scr" id="scrWelcome">
+    <div class="welcome">
+      <div id="welcomeClock" style="width:140px;height:154px;"></div>
+      <h1>Lær å lese klokken!</h1>
+      <p>Velg en aktivitet for å starte</p>
+      <div id="selfCompeteArea"></div>
+      <div class="mode-grid">
+        <button class="mcard" onclick="pickMode('read')">
+          <span class="mcard-ico">👀</span>
+          <div class="mcard-txt"><div class="mcard-t">Les klokka</div><div class="mcard-d">Se klokken – velg riktig tid</div></div>
+        </button>
+        <button class="mcard" onclick="pickMode('listen')">
+          <span class="mcard-ico">👂</span>
+          <div class="mcard-txt"><div class="mcard-t">Lytt og velg</div><div class="mcard-d">Hør tiden – velg riktig klokke</div></div>
+        </button>
+        <button class="mcard" onclick="pickMode('set')">
+          <span class="mcard-ico">✋</span>
+          <div class="mcard-txt"><div class="mcard-t">Still klokka</div><div class="mcard-d">Still viserne til riktig tid</div></div>
+        </button>
+        <button class="mcard" onclick="pickMode('match')">
+          <span class="mcard-ico">🧩</span>
+          <div class="mcard-txt"><div class="mcard-t">Koble sammen</div><div class="mcard-d">Match klokke med tekst</div></div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEVEL SELECT -->
+  <div class="scr" id="scrLevels">
+    <div class="backrow">
+      <button class="ibtn" onclick="showScr('scrWelcome')">⬅️</button>
+      <span class="lbl" id="lvlTitle">Velg nivå</span>
+    </div>
+    <div class="welcome">
+      <h1 id="lvlHeading">Velg nivå</h1>
+      <div class="lvl-grid" id="lvlGrid"></div>
+    </div>
+  </div>
+
+  <!-- GAME -->
+  <div class="scr" id="scrGame">
+    <div class="backrow">
+      <button class="ibtn" onclick="exitGame()">⬅️</button>
+      <span class="lbl" id="gameLabel">Nivå 1</span>
+    </div>
+    <div class="game" id="gameArea"></div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="overlay" id="settingsOverlay">
+  <div class="scard">
+    <div class="stitle">⚙️ Innstillinger</div>
+    <div class="srow"><span class="slbl">🧠 Enkel modus</span><button class="toggle" id="sSimple" onclick="toggleSimple()"></button></div>
+    <div class="srow"><span class="slbl">🔊 Lyd</span><button class="toggle on" id="sSound" onclick="toggleSound()"></button></div>
+    <div class="srow"><span class="slbl">🐢 Sakte modus</span><button class="toggle" id="sSlow" onclick="toggleSlow()"></button></div>
+    <div style="border-top:2px solid var(--border);margin-top:14px;padding-top:14px;">
+      <div class="stitle" style="font-size:1.1rem;margin-bottom:10px;">👤 Bruker</div>
+      <button class="danger-btn" onclick="resetCurrentUser()" style="background:var(--orangeLight);color:var(--orange);border-color:var(--orange);">🔄 Nullstill denne brukeren</button>
+      <button class="danger-btn" onclick="resetAllUsers()">🗑️ Slett alle brukere</button>
+    </div>
+    <button class="btn btn-teal" style="width:100%;margin-top:10px;" onclick="closeSettings()">Lukk</button>
+  </div>
+</div>
+
+<!-- CELEBRATION -->
+<div class="celeb" id="celeb"><div class="celeb-inner"><div style="font-size:4rem" id="celebE">🎉</div><div style="font-size:1.5rem;font-weight:800;margin-top:6px" id="celebT">Flott!</div></div></div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   PREDEFINED USERS (Animal Names)
+   ════════════════════════════════════════════════════════════════ */
+const AVAILABLE_USERS = [
+  {id:'bruno', emoji:'🐻', name:'Bruno'},
+  {id:'leo', emoji:'🦁', name:'Leo'},
+  {id:'luna', emoji:'🐰', name:'Luna'},
+  {id:'pingu', emoji:'🐧', name:'Pingu'},
+  {id:'roxy', emoji:'🦊', name:'Roxy'},
+  {id:'freddy', emoji:'🐸', name:'Freddy'},
+  {id:'bella', emoji:'🦋', name:'Bella'},
+  {id:'milo', emoji:'🐶', name:'Milo'},
+  {id:'nemo', emoji:'🐠', name:'Nemo'},
+  {id:'kiki', emoji:'🐱', name:'Kiki'},
+  {id:'olga', emoji:'🦉', name:'Olga'},
+  {id:'rex', emoji:'🦖', name:'Rex'},
+];
+
+/* ════════════════════════════════════════════════════════════════
+   USER MANAGEMENT
+   ════════════════════════════════════════════════════════════════ */
+function getUsers() {
+  try {
+    const raw = localStorage.getItem('TikTakAVO_users');
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+function saveUsers(users) {
+  try { localStorage.setItem('TikTakAVO_users', JSON.stringify(users)); } catch(e) {}
+}
+function getCurrentUserId() {
+  try { return localStorage.getItem('TikTakAVO_currentUser') || null; } catch(e) { return null; }
+}
+function setCurrentUserId(id) {
+  try { localStorage.setItem('TikTakAVO_currentUser', id); } catch(e) {}
+}
+function clearCurrentUser() {
+  try { localStorage.removeItem('TikTakAVO_currentUser'); } catch(e) {}
+}
+function getUserById(id) {
+  return getUsers().find(u => u.id === id) || null;
+}
+function saveUser(user) {
+  const users = getUsers();
+  const idx = users.findIndex(u => u.id === user.id);
+  if (idx >= 0) users[idx] = user; else users.push(user);
+  saveUsers(users);
+}
+function generatePin() {
+  return String(Math.floor(1000 + Math.random() * 9000));
+}
+
+/* ════════════════════════════════════════════════════════════════
+   STATE
+   ════════════════════════════════════════════════════════════════ */
+const S = {
+  mode: null, level: 1,
+  score: 0, streak: 0, best: 0,
+  round: 0, total: 20,
+  answer: null,
+  simple: false, sound: true, slow: false,
+  stars: {1:0,2:0,3:0,4:0},
+  unlocked: [1],
+  answered: false,
+  setH: 12, setM: 0, dragging: null,
+  matchPairs: [], matchSel: null, matchCount: 0,
+  spokenIntro: false,
+  // User session
+  currentUser: null,
+  sessionScore: 0, // score accumulated this session
+  prevSessionScore: null, // last session's total score
+};
+
+/* ════════════════════════════════════════════════════════════════
+   USER SCREEN RENDERING
+   ════════════════════════════════════════════════════════════════ */
+function renderUserScreen() {
+  const users = getUsers();
+  const takenIds = users.map(u => u.id);
+  const available = AVAILABLE_USERS.filter(a => !takenIds.includes(a.id));
+
+  let html = `<h1>🕐 TikTakAVO</h1><p style="color:var(--text2);font-size:1rem;">Hvem spiller?</p>`;
+
+  // Existing users
+  if (users.length > 0) {
+    html += `<div class="user-section"><div class="user-section-title">👋 Velkommen tilbake</div><div class="user-grid">`;
+    users.forEach(u => {
+      const def = AVAILABLE_USERS.find(a => a.id === u.id);
+      const emoji = def ? def.emoji : '👤';
+      const name = def ? def.name : u.id;
+      const totalScore = u.score || 0;
+      html += `
+        <button class="user-card" onclick="startLogin('${u.id}')">
+          <div class="user-emoji">${emoji}</div>
+          <div class="user-name">${name}</div>
+          <div class="user-info">⭐ ${totalScore} poeng</div>
+        </button>`;
+    });
+    html += `</div></div>`;
+  }
+
+  // New users
+  if (available.length > 0) {
+    html += `<div class="user-section" style="margin-top:12px;"><div class="user-section-title">✨ Ny bruker</div><div class="user-grid">`;
+    available.forEach(a => {
+      html += `
+        <button class="user-card new-user" onclick="createUser('${a.id}')">
+          <div class="user-emoji">${a.emoji}</div>
+          <div class="user-name">${a.name}</div>
+          <div class="user-info" style="color:var(--teal);">Trykk for å starte</div>
+        </button>`;
+    });
+    html += `</div></div>`;
+  }
+
+  document.getElementById('userScreen').innerHTML = html;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CREATE USER
+   ════════════════════════════════════════════════════════════════ */
+function createUser(id) {
+  const pin = generatePin();
+  const def = AVAILABLE_USERS.find(a => a.id === id);
+  const newUser = {
+    id: id,
+    pin: pin,
+    score: 0,
+    best: 0,
+    level: 1,
+    stars: {1:0,2:0,3:0,4:0},
+    unlocked: [1],
+    lastPlayed: new Date().toISOString().split('T')[0],
+    simple: false, sound: true, slow: false,
+    prevSessionScore: null,
+  };
+  saveUser(newUser);
+
+  // Show PIN reveal
+  const emoji = def ? def.emoji : '👤';
+  const name = def ? def.name : id;
+  const ps = document.getElementById('pinScreen');
+  ps.innerHTML = `
+    <div class="pin-reveal">
+      <div style="font-size:3.5rem;">${emoji}</div>
+      <div style="font-size:1.3rem;font-weight:700;margin:8px 0;">Hei, ${name}!</div>
+      <div class="pin-msg">Din kode:</div>
+      <div class="big-pin">${pin}</div>
+      <div class="pin-msg" style="color:var(--red);font-weight:700;margin-top:6px;">Husk denne koden!</div>
+      <button class="btn btn-teal" style="margin-top:18px;width:100%;" onclick="loginUser('${id}')">Jeg har husket den! ✅</button>
+    </div>`;
+  showScr('scrPin');
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LOGIN FLOW
+   ════════════════════════════════════════════════════════════════ */
+let pinBuffer = '';
+let pinTarget = '';
+
+function startLogin(id) {
+  pinBuffer = '';
+  pinTarget = id;
+  renderPinScreen(id);
+  showScr('scrPin');
+}
+
+function renderPinScreen(id, error) {
+  const user = getUserById(id);
+  const def = AVAILABLE_USERS.find(a => a.id === id);
+  const emoji = def ? def.emoji : '👤';
+  const name = def ? def.name : id;
+
+  const dots = [0,1,2,3].map(i =>
+    `<div class="pin-dot ${i < pinBuffer.length ? 'filled' : ''} ${error ? 'error' : ''}"></div>`
+  ).join('');
+
+  document.getElementById('pinScreen').innerHTML = `
+    <div class="pin-user-display">${emoji}</div>
+    <div class="pin-title">${name}</div>
+    <div style="font-size:0.95rem;color:var(--text2);">Skriv inn din kode</div>
+    ${error ? '<div style="color:var(--red);font-weight:700;font-size:1rem;">Feil kode! Prøv igjen.</div>' : ''}
+    <div class="pin-dots">${dots}</div>
+    <div class="pin-pad">
+      ${[1,2,3,4,5,6,7,8,9].map(n => `<button class="pin-key" onclick="pinInput('${n}')">${n}</button>`).join('')}
+      <button class="pin-key empty"></button>
+      <button class="pin-key" onclick="pinInput('0')">0</button>
+      <button class="pin-key del" onclick="pinDelete()">⌫</button>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="backToUsers()" style="margin-top:12px;">⬅️ Tilbake</button>`;
+}
+
+function pinInput(digit) {
+  if (pinBuffer.length >= 4) return;
+  pinBuffer += digit;
+  renderPinScreen(pinTarget, false);
+  if (pinBuffer.length === 4) {
+    setTimeout(() => {
+      const user = getUserById(pinTarget);
+      if (user && user.pin === pinBuffer) {
+        loginUser(pinTarget);
+      } else {
+        pinBuffer = '';
+        renderPinScreen(pinTarget, true);
+      }
+    }, 200);
+  }
+}
+
+function pinDelete() {
+  if (pinBuffer.length > 0) {
+    pinBuffer = pinBuffer.slice(0, -1);
+    renderPinScreen(pinTarget, false);
+  }
+}
+
+function backToUsers() {
+  pinBuffer = '';
+  pinTarget = '';
+  renderUserScreen();
+  showScr('scrUsers');
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LOGIN / LOGOUT
+   ════════════════════════════════════════════════════════════════ */
+function loginUser(id) {
+  const user = getUserById(id);
+  if (!user) return;
+
+  setCurrentUserId(id);
+  S.currentUser = user;
+
+  // Load user data into game state
+  S.stars = user.stars || {1:0,2:0,3:0,4:0};
+  S.unlocked = user.unlocked || [1];
+  S.best = user.best || 0;
+  S.simple = user.simple || false;
+  S.sound = user.sound !== undefined ? user.sound : true;
+  S.slow = user.slow || false;
+  S.prevSessionScore = user.prevSessionScore;
+  S.sessionScore = 0;
+
+  // Set base score for accumulation
+  user._baseScore = user.score || 0;
+  saveUser(user);
+
+  // Apply settings
+  document.body.classList.toggle('simple-mode', S.simple);
+  document.getElementById('simpleToggle').classList.toggle('active', S.simple);
+
+  // Update user welcome bar
+  const def = AVAILABLE_USERS.find(a => a.id === id);
+  const emoji = def ? def.emoji : '👤';
+  const name = def ? def.name : id;
+  document.getElementById('userWelcomeBar').innerHTML =
+    `<button class="tbtn" onclick="logoutUser()" title="Bytt bruker" style="font-size:0.85rem;">${emoji} ${name} ↺</button>`;
+
+  // Update last played
+  user.lastPlayed = new Date().toISOString().split('T')[0];
+  saveUser(user);
+
+  // Show self-competition info
+  renderSelfCompete();
+
+  showScr('scrWelcome');
+  drawWelcomeClock();
+}
+
+function logoutUser() {
+  // Save session score as prevSessionScore
+  if (S.currentUser) {
+    const user = getUserById(S.currentUser.id);
+    if (user) {
+      user.prevSessionScore = S.sessionScore;
+      saveUser(user);
+    }
+  }
+  speechSynthesis.cancel();
+  S.currentUser = null;
+  clearCurrentUser();
+  document.getElementById('userWelcomeBar').innerHTML = '';
+  document.getElementById('selfCompeteArea').innerHTML = '';
+  renderUserScreen();
+  showScr('scrUsers');
+}
+
+function renderSelfCompete() {
+  const area = document.getElementById('selfCompeteArea');
+  if (!S.currentUser) { area.innerHTML = ''; return; }
+  const user = getUserById(S.currentUser.id);
+  if (!user) { area.innerHTML = ''; return; }
+
+  let msgs = [];
+  if (user.best > 0) msgs.push(`🔥 Beste rekke: ${user.best}`);
+  if (user.score > 0) msgs.push(`⭐ Totalt: ${user.score} poeng`);
+  if (user.prevSessionScore !== null && user.prevSessionScore > 0) {
+    msgs.push(`📊 Forrige økt: ${user.prevSessionScore} poeng`);
+  }
+
+  if (msgs.length > 0) {
+    area.innerHTML = `<div class="self-compete">${msgs.join(' &nbsp;·&nbsp; ')}</div>`;
+  } else {
+    area.innerHTML = '';
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   RESET FUNCTIONS
+   ════════════════════════════════════════════════════════════════ */
+function resetCurrentUser() {
+  if (!S.currentUser) return;
+  if (confirm('Nullstille all fremgang for denne brukeren?')) {
+    const user = getUserById(S.currentUser.id);
+    if (user) {
+      user.score = 0;
+      user.best = 0;
+      user.stars = {1:0,2:0,3:0,4:0};
+      user.unlocked = [1];
+      user.prevSessionScore = null;
+      saveUser(user);
+      S.stars = {1:0,2:0,3:0,4:0};
+      S.unlocked = [1];
+      S.best = 0;
+      S.score = 0;
+      S.streak = 0;
+      S.sessionScore = 0;
+    }
+    closeSettings();
+    renderSelfCompete();
+    showScr('scrWelcome');
+  }
+}
+
+function resetAllUsers() {
+  if (confirm('Slette ALLE brukere og all fremgang?')) {
+    localStorage.removeItem('TikTakAVO_users');
+    localStorage.removeItem('TikTakAVO_currentUser');
+    S.currentUser = null;
+    S.score=0;S.streak=0;S.best=0;S.stars={1:0,2:0,3:0,4:0};S.unlocked=[1];
+    document.getElementById('userWelcomeBar').innerHTML = '';
+    document.getElementById('selfCompeteArea').innerHTML = '';
+    closeSettings();
+    renderUserScreen();
+    showScr('scrUsers');
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   NORWEGIAN TIME
+   ════════════════════════════════════════════════════════════════ */
+const HN = ['tolv','ett','to','tre','fire','fem','seks','syv','åtte','ni','ti','elleve','tolv'];
+
+function t2no(h, m) {
+  const h12 = h % 12, nx = (h12+1)%12;
+  if(m===0) return `klokken ${HN[h12]}`;
+  if(m===30) return `halv ${HN[nx]}`;
+  if(m===15) return `kvart over ${HN[h12]}`;
+  if(m===45) return `kvart på ${HN[nx]}`;
+  if(m===5) return `fem over ${HN[h12]}`;
+  if(m===10) return `ti over ${HN[h12]}`;
+  if(m===20) return `ti på halv ${HN[nx]}`;
+  if(m===25) return `fem på halv ${HN[nx]}`;
+  if(m===35) return `fem over halv ${HN[nx]}`;
+  if(m===40) return `ti over halv ${HN[nx]}`;
+  if(m===50) return `ti på ${HN[nx]}`;
+  if(m===55) return `fem på ${HN[nx]}`;
+  return digi(h,m);
+}
+function digi(h,m){return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;}
+
+/* ════════════════════════════════════════════════════════════════
+   TIME GENERATION
+   ════════════════════════════════════════════════════════════════ */
+function rndTime(lv) {
+  const h = Math.floor(Math.random()*12)+1;
+  let m;
+  switch(lv){
+    case 1: m=0; break;
+    case 2: m=[0,30][Math.floor(Math.random()*2)]; break;
+    case 3: m=[0,15,30,45][Math.floor(Math.random()*4)]; break;
+    case 4: m=Math.floor(Math.random()*12)*5; break;
+    default: m=0;
+  }
+  return {h,m};
+}
+
+function genWrongs(correct, lv, n) {
+  const w=[], seen=new Set([`${correct.h}-${correct.m}`]);
+  let safety=0;
+  while(w.length<n && safety<80){
+    const t=rndTime(lv);
+    const k=`${t.h}-${t.m}`;
+    if(!seen.has(k)){seen.add(k);w.push(t);}
+    safety++;
+  }
+  return w;
+}
+
+function optCount(){
+  if(S.slow) return 2;
+  if(S.round<=5) return 2;
+  if(S.round<=12) return 3;
+  return S.level<=2?3:4;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SPEECH
+   ════════════════════════════════════════════════════════════════ */
+function say(txt, cb) {
+  if(!S.sound){if(cb)cb();return;}
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(txt);
+  u.lang='nb-NO'; u.rate=S.slow?0.7:0.85; u.pitch=1.0;
+  const v=speechSynthesis.getVoices().find(v=>v.lang.startsWith('nb')||v.lang.startsWith('no'));
+  if(v) u.voice=v;
+  if(cb) u.onend=cb;
+  speechSynthesis.speak(u);
+}
+if(typeof speechSynthesis!=='undefined'){speechSynthesis.onvoiceschanged=()=>{};speechSynthesis.getVoices();}
+
+/* ════════════════════════════════════════════════════════════════
+   BEAR-EAR CLOCK SVG
+   ════════════════════════════════════════════════════════════════ */
+const NCOL=['#F26B6B','#F2983A','#F5C842','#6BCF6B','#3DC8C8','#5A9EF2','#8B6BF2','#E06BBF','#F26B6B','#F2983A','#6BCF6B','#5A9EF2'];
+const DCOL=['#F26B6B','#F2983A','#F5C842','#6BCF6B','#3DC8C8','#5A9EF2','#8B6BF2','#E06BBF','#F26B6B','#F2983A','#6BCF6B','#5A9EF2'];
+
+function clockSVG(h, m, opts={}) {
+  const {w=300, mini=false, interactive=false, id='clk'} = opts;
+  const s = mini ? 60 : w;
+  const cx = s/2, cy = mini ? s/2 : s/2 + s*0.05;
+  const r = mini ? s*0.42 : s*0.39;
+  const frameR = r * 1.15;
+  const earR = mini ? r*0.25 : r*0.28;
+  const earOff = mini ? r*0.72 : r*0.78;
+
+  const mA = (m/60)*360-90, hA = ((h%12)/12)*360+(m/60)*30-90;
+  const mr=mA*Math.PI/180, hr=hA*Math.PI/180;
+  const mLen=r*0.78, hLen=r*0.52;
+  const mx=cx+Math.cos(mr)*mLen, my=cy+Math.sin(mr)*mLen;
+  const hx=cx+Math.cos(hr)*hLen, hy=cy+Math.sin(hr)*hLen;
+
+  let ticks='';
+  if(!mini){
+    for(let i=0;i<60;i++){
+      const a=(i/60)*360-90, rd=a*Math.PI/180;
+      if(i%5===0) continue;
+      const i1=r*0.88, i2=r*0.94;
+      const x1=cx+Math.cos(rd)*i1, y1=cy+Math.sin(rd)*i1;
+      const x2=cx+Math.cos(rd)*i2, y2=cy+Math.sin(rd)*i2;
+      ticks+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#D4D4D4" stroke-width="1.5" stroke-linecap="round"/>`;
+    }
+  }
+
+  let dots='';
+  if(!mini){
+    for(let i=0;i<12;i++){
+      const a=(i/12)*360-90, rd=a*Math.PI/180;
+      const dotR=r*0.96;
+      const dx=cx+Math.cos(rd)*dotR, dy=cy+Math.sin(rd)*dotR;
+      dots+=`<circle cx="${dx}" cy="${dy}" r="3.5" fill="${DCOL[i]}"/>`;
+    }
+  }
+
+  let nums='';
+  const numR = mini ? r*0.65 : r*0.72;
+  const bubR = mini ? s*0.07 : r*0.12;
+  for(let i=1;i<=12;i++){
+    const a=(i/12)*360-90, rd=a*Math.PI/180;
+    const nx=cx+Math.cos(rd)*numR, ny=cy+Math.sin(rd)*numR;
+    const col=NCOL[i-1];
+    const fs=mini?s*0.16:r*0.19;
+    nums+=`<circle cx="${nx}" cy="${ny}" r="${bubR}" fill="${col}" opacity="0.85"/>`;
+    nums+=`<text x="${nx}" y="${ny}" text-anchor="middle" dominant-baseline="central" font-size="${fs}" font-weight="800" fill="#FFF" font-family="var(--font)">${i}</text>`;
+  }
+
+  const viewH = mini ? s : s*1.1;
+  const earY = cy - frameR*0.7;
+
+  const glow = (!mini && !S.simple) ? `<circle cx="${cx}" cy="${cy}" r="${frameR+4}" fill="none" stroke="var(--clockFrame)" stroke-width="2" opacity="0.25"/>` : '';
+
+  return `<svg viewBox="0 0 ${s} ${viewH}" class="clock-svg" id="${id}" xmlns="http://www.w3.org/2000/svg" style="${interactive?'cursor:grab;':''}">
+    ${mini?'':`
+    <circle cx="${cx-earOff}" cy="${earY}" r="${earR}" fill="var(--clockFrame)"/>
+    <circle cx="${cx+earOff}" cy="${earY}" r="${earR}" fill="var(--clockFrame)"/>
+    <circle cx="${cx-earOff}" cy="${earY}" r="${earR*0.55}" fill="var(--clockFrame)" opacity="0.6"/>
+    <circle cx="${cx+earOff}" cy="${earY}" r="${earR*0.55}" fill="var(--clockFrame)" opacity="0.6"/>
+    `}
+    ${glow}
+    <circle cx="${cx}" cy="${cy}" r="${frameR}" fill="var(--clockFrame)"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="var(--clockFace)"/>
+    ${ticks}
+    ${dots}
+    ${nums}
+    <line x1="${cx}" y1="${cy}" x2="${hx}" y2="${hy}" stroke="var(--clockHourHand)" stroke-width="${mini?3:7}" stroke-linecap="round"/>
+    <line x1="${cx}" y1="${cy}" x2="${mx}" y2="${my}" stroke="var(--clockMinuteHand)" stroke-width="${mini?2:4.5}" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="${mini?3:8}" fill="var(--clockCenter)"/>
+    <circle cx="${cx}" cy="${cy}" r="${mini?1.5:4}" fill="#FFF"/>
+  </svg>`;
+}
+
+/* WELCOME CLOCK */
+function drawWelcomeClock(){
+  const el=document.getElementById('welcomeClock');
+  if(el){const now=new Date();el.innerHTML=clockSVG(now.getHours()%12||12, Math.floor(now.getMinutes()/5)*5, {w:140,id:'wclk'});}
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SCREENS
+   ════════════════════════════════════════════════════════════════ */
+function showScr(id){
+  document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  document.getElementById('stats').style.display = id==='scrGame'?'flex':'none';
+}
+
+/* ════════════════════════════════════════════════════════════════
+   MODE & LEVEL SELECT
+   ════════════════════════════════════════════════════════════════ */
+const ANIMALS = ['🦉','🐻','🦊','🦁'];
+const LVL_INFO = [
+  {n:1,name:'Hele timer',desc:'klokken ett, to, tre...'},
+  {n:2,name:'Halve timer',desc:'halv to, halv tre...'},
+  {n:3,name:'Kvarter',desc:'kvart over, kvart på'},
+  {n:4,name:'5-minutt',desc:'fem over, ti på...'},
+];
+
+function pickMode(mode){
+  S.mode=mode;
+  const titles={read:'👀 Les klokka',listen:'👂 Lytt og velg',set:'✋ Still klokka',match:'🧩 Koble sammen'};
+  document.getElementById('lvlHeading').textContent=titles[mode]||'Velg nivå';
+  document.getElementById('lvlTitle').textContent=titles[mode]||'Velg nivå';
+  renderLevels();
+  showScr('scrLevels');
+}
+
+function renderLevels(){
+  const g=document.getElementById('lvlGrid');
+  g.innerHTML=LVL_INFO.map(lv=>{
+    const ok=S.unlocked.includes(lv.n);
+    const st=S.stars[lv.n]||0;
+    const starStr='⭐'.repeat(Math.min(st,3))+'☆'.repeat(Math.max(0,3-st));
+    return `<button class="lvl-card ${ok?'':'locked'}" onclick="${ok?`startGame(${lv.n})`:'void(0)'}">
+      <div class="lvl-animal">${ANIMALS[lv.n-1]}${ok?'':`<span class="lvl-lock">🔒</span>`}</div>
+      <div class="lvl-name">${lv.name}</div>
+      <div class="lvl-desc">${lv.desc}</div>
+      <div class="lvl-stars">${starStr}</div>
+    </button>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════════════════════════════════
+   GAME START
+   ════════════════════════════════════════════════════════════════ */
+function startGame(lv){
+  S.level=lv; S.round=0; S.score=0; S.streak=0;
+  S.total = S.slow ? 12 : 20;
+  S.answered=false; S.spokenIntro=false;
+  updateStats();
+  document.getElementById('gameLabel').textContent=`Nivå ${lv} – ${LVL_INFO[lv-1].name}`;
+  showScr('scrGame');
+  nextRound();
+}
+
+function exitGame(){speechSynthesis.cancel();showScr('scrLevels');}
+
+/* ════════════════════════════════════════════════════════════════
+   GAME ROUNDS
+   ════════════════════════════════════════════════════════════════ */
+function nextRound(){
+  S.round++; S.answered=false;
+  if(S.round>S.total){finishGame();return;}
+  updateStats();
+  if(S.mode==='match') renderMatch();
+  else if(S.mode==='read') renderRead();
+  else if(S.mode==='listen') renderListen();
+  else if(S.mode==='set') renderSet();
+}
+
+/* ──── READ ──── */
+function renderRead(){
+  const c=rndTime(S.level); S.answer=c;
+  const n=optCount();
+  const wrongs=genWrongs(c,S.level,n-1);
+  const opts=shuffle([c,...wrongs]);
+  const cls=n<=2?'c1':'c2';
+  const a=document.getElementById('gameArea');
+
+  a.innerHTML=`
+    <div class="instruction">
+      Hva er klokken?
+      <button class="replay" onclick="say('Hva er klokken?')" title="Hør spørsmålet">🔊</button>
+    </div>
+    <div class="pbar"><div class="pfill" style="width:${(S.round-1)/S.total*100}%"></div></div>
+    <div class="clock-wrap">${clockSVG(c.h,c.m)}</div>
+    <div class="agrid ${cls}" id="aGrid">
+      ${opts.map(o=>`
+        <button class="abtn" onclick="checkAns(${o.h},${o.m},this)" data-h="${o.h}" data-m="${o.m}">
+          ${t2no(o.h,o.m)}
+          <span class="spk" onclick="event.stopPropagation();say('${t2no(o.h,o.m).replace(/'/g,"\\'")}')">🔊</span>
+        </button>`).join('')}
+    </div>
+    <div class="fb" id="fb"></div>`;
+
+  if(!S.spokenIntro){say('Hva er klokken?');S.spokenIntro=true;}
+}
+
+/* ──── LISTEN ──── */
+function renderListen(){
+  const c=rndTime(S.level); S.answer=c;
+  const n=optCount();
+  const wrongs=genWrongs(c,S.level,n-1);
+  const opts=shuffle([c,...wrongs]);
+  const cls=n<=2?'c2':'c3';
+  const a=document.getElementById('gameArea');
+
+  a.innerHTML=`
+    <div class="instruction">
+      Lytt – velg riktig klokke
+      <button class="replay" onclick="sayTime()" title="Hør tiden igjen">🔊</button>
+    </div>
+    <div class="pbar"><div class="pfill" style="width:${(S.round-1)/S.total*100}%"></div></div>
+    <div class="agrid ${cls}" id="aGrid" style="max-width:500px;">
+      ${opts.map(o=>`
+        <button class="abtn" onclick="checkAns(${o.h},${o.m},this)" data-h="${o.h}" data-m="${o.m}" style="flex-direction:column;padding:10px;">
+          ${clockSVG(o.h,o.m,{w:60,mini:true,id:`mc${o.h}_${o.m}`})}
+          <span style="font-size:0.95rem;margin-top:4px;">${digi(o.h,o.m)}</span>
+        </button>`).join('')}
+    </div>
+    <div class="fb" id="fb"></div>`;
+
+  if(!S.spokenIntro){
+    say('Lytt, og velg riktig klokke.', ()=>{ setTimeout(()=>sayTime(),300); });
+    S.spokenIntro=true;
+  } else {
+    setTimeout(()=>sayTime(),200);
+  }
+}
+
+function sayTime(){const t=S.answer;say(t2no(t.h,t.m));}
+
+/* ──── SET ──── */
+function renderSet(){
+  const c=rndTime(S.level); S.answer=c;
+  S.setH=12; S.setM=0;
+  const a=document.getElementById('gameArea');
+  const timeStr = t2no(c.h,c.m).replace(/'/g,"\\'");
+  a.innerHTML=`
+    <div class="instruction">
+      Still klokken til:
+      <button class="replay" onclick="say('Still klokken til ${timeStr}')" title="Hør instruksjonen">🔊</button>
+    </div>
+    <div class="pbar"><div class="pfill" style="width:${(S.round-1)/S.total*100}%"></div></div>
+    <div class="set-target">${t2no(c.h,c.m)}</div>
+    <div class="set-hint">(${digi(c.h,c.m)})</div>
+    <div class="clock-wrap interactive" id="iClock">${clockSVG(S.setH,S.setM,{interactive:true,id:'sClk'})}</div>
+    <div class="set-btns">
+      <button class="btn btn-outline btn-sm" onclick="adjSet('h',-1)">◀ Time</button>
+      <button class="btn btn-outline btn-sm" onclick="adjSet('h',1)">Time ▶</button>
+      <button class="btn btn-outline btn-sm" onclick="adjSet('m',-5)">◀ Minutt</button>
+      <button class="btn btn-outline btn-sm" onclick="adjSet('m',5)">Minutt ▶</button>
+    </div>
+    <button class="btn btn-teal" onclick="checkSet()">✅ Sjekk svaret</button>
+    <div class="fb" id="fb"></div>`;
+
+  if(!S.spokenIntro){
+    say(`Still klokken til ${t2no(c.h,c.m)}`);
+    S.spokenIntro=true;
+  }
+  setupDrag();
+}
+
+function adjSet(t,d){
+  if(S.answered)return;
+  if(t==='h'){S.setH=((S.setH-1+d+12)%12)+1;}
+  else{S.setM=(S.setM+d+60)%60;}
+  updSetClk();
+}
+function updSetClk(){
+  const c=document.getElementById('iClock');
+  if(c){c.innerHTML=clockSVG(S.setH,S.setM,{interactive:true,id:'sClk'});setupDrag();}
+}
+function setupDrag(){
+  const svg=document.getElementById('sClk');
+  if(!svg)return;
+  const getA=(e)=>{
+    const r=svg.getBoundingClientRect();
+    const cxR=r.left+r.width/2, cyR=r.top+r.height*0.525;
+    const px=e.touches?e.touches[0].clientX:e.clientX;
+    const py=e.touches?e.touches[0].clientY:e.clientY;
+    return Math.atan2(py-cyR,px-cxR)*180/Math.PI+90;
+  };
+  const onM=(e)=>{
+    if(!S.dragging||S.answered)return;
+    e.preventDefault();
+    let a=getA(e);if(a<0)a+=360;
+    if(S.dragging==='minute'){S.setM=Math.round(a/6)%60;S.setM=Math.round(S.setM/5)*5;if(S.setM>=60)S.setM=0;}
+    else{const nh=Math.round(a/30);S.setH=nh===0?12:(nh>12?12:nh);}
+    updSetClk();
+  };
+  const onE=()=>{S.dragging=null;};
+  svg.onmousedown=(e)=>{if(!S.answered){S.dragging='minute';onM(e);}};
+  svg.ontouchstart=(e)=>{if(!S.answered){S.dragging='minute';onM(e);}};
+  document.addEventListener('mousemove',onM);
+  document.addEventListener('touchmove',onM,{passive:false});
+  document.addEventListener('mouseup',onE);
+  document.addEventListener('touchend',onE);
+}
+function checkSet(){
+  if(S.answered)return;
+  S.answered=true;
+  const c=S.answer;
+  const ok=S.setH%12===c.h%12 && S.setM===c.m;
+  showFeedback(ok);
+}
+
+/* ──── MATCH ──── */
+function renderMatch(){
+  const pc=S.slow?3:4;
+  const pairs=[];const used=new Set();
+  let safe=0;
+  while(pairs.length<pc&&safe<80){const t=rndTime(S.level);const k=`${t.h}-${t.m}`;if(!used.has(k)){used.add(k);pairs.push(t);}safe++;}
+  S.matchPairs=pairs;S.matchSel=null;S.matchCount=0;
+
+  const clks=shuffle(pairs.map((p,i)=>({type:'c',i,h:p.h,m:p.m})));
+  const txts=shuffle(pairs.map((p,i)=>({type:'t',i,h:p.h,m:p.m})));
+  const all=[];for(let i=0;i<pc;i++){all.push(clks[i],txts[i]);}
+
+  const a=document.getElementById('gameArea');
+  a.innerHTML=`
+    <div class="instruction">
+      Koble klokke med riktig tid
+      <button class="replay" onclick="say('Koble klokke med riktig tid')" title="Hør instruksjonen">🔊</button>
+    </div>
+    <div class="pbar"><div class="pfill" style="width:${(S.round-1)/S.total*100}%"></div></div>
+    <div class="mgrid" id="mGrid">
+      ${all.map(c=>{
+        if(c.type==='c')return `<button class="mchip" data-type="c" data-i="${c.i}" onclick="mSel(this)">${clockSVG(c.h,c.m,{w:60,mini:true,id:`mm${c.i}c`})}</button>`;
+        return `<button class="mchip" data-type="t" data-i="${c.i}" onclick="mSel(this)">${t2no(c.h,c.m)}</button>`;
+      }).join('')}
+    </div>
+    <div class="fb" id="fb"></div>`;
+
+  if(!S.spokenIntro){say('Koble klokke med riktig tid');S.spokenIntro=true;}
+}
+
+function mSel(card){
+  if(card.classList.contains('hit'))return;
+  const type=card.dataset.type, idx=parseInt(card.dataset.i);
+  if(!S.matchSel){
+    S.matchSel={el:card,type,idx};card.classList.add('sel');
+    if(type==='t'){const p=S.matchPairs[idx];say(t2no(p.h,p.m));}
+  } else {
+    const prev=S.matchSel;
+    if(prev.el===card){card.classList.remove('sel');S.matchSel=null;return;}
+    if(prev.type===type){prev.el.classList.remove('sel');S.matchSel={el:card,type,idx};card.classList.add('sel');
+      if(type==='t'){const p=S.matchPairs[idx];say(t2no(p.h,p.m));}return;}
+    if(prev.idx===idx){
+      prev.el.classList.remove('sel');prev.el.classList.add('hit');card.classList.add('hit');
+      S.matchCount++;S.matchSel=null;
+      if(S.matchCount===S.matchPairs.length){
+        S.score+=S.matchPairs.length;S.streak+=S.matchPairs.length;updateStats();
+        showFeedback(true,true);
+      } else {
+        floatStars(card);
+      }
+    } else {
+      card.classList.add('miss');prev.el.classList.add('miss');
+      setTimeout(()=>{card.classList.remove('miss');prev.el.classList.remove('miss','sel');},700);
+      S.matchSel=null;
+    }
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ANSWER CHECKING
+   ════════════════════════════════════════════════════════════════ */
+function checkAns(h,m,btn){
+  if(S.answered)return;
+  S.answered=true;
+  const c=S.answer;
+  const ok=(h%12===c.h%12)&&(m===c.m);
+  const grid=document.getElementById('aGrid');
+  if(grid){
+    grid.querySelectorAll('.abtn').forEach(b=>{
+      const bh=parseInt(b.dataset.h), bm=parseInt(b.dataset.m);
+      if(bh%12===c.h%12&&bm===c.m) b.classList.add('correct-answer');
+      else if(b===btn&&!ok) b.classList.add('wrong-answer');
+      b.style.pointerEvents='none';
+    });
+  }
+  showFeedback(ok);
+}
+
+function showFeedback(ok, isMatch=false){
+  const fb=document.getElementById('fb');
+  if(!fb)return;
+  const mascots=['🦉','🐻','🦊','🐸','🦁'];
+  const rm=mascots[Math.floor(Math.random()*mascots.length)];
+  const okW=['Riktig!','Flott!','Bra jobba!','Kjempebra!','Fantastisk!','Supert!'];
+  const noW=['Nesten!','Prøv igjen!','Neste gang!'];
+
+  if(ok){
+    if(!isMatch) S.score++;
+    S.streak++;if(S.streak>S.best)S.best=S.streak;
+    S.sessionScore++;
+    const w=okW[Math.floor(Math.random()*okW.length)];
+    fb.innerHTML=`
+      <div class="fb-mascot">${rm}</div>
+      <div class="fb-text ok">${w}</div>
+      <button class="btn btn-teal" onclick="nextRound()" style="margin-top:6px;">Neste ➡️</button>`;
+    say(w);
+    correctAnim(fb);
+    if(S.streak>0&&S.streak%5===0) showCeleb();
+  } else {
+    S.streak=0;
+    const w=noW[Math.floor(Math.random()*noW.length)];
+    const c=S.answer;
+    fb.innerHTML=`
+      <div class="fb-mascot">${rm}</div>
+      <div class="fb-text no">${w}</div>
+      <div style="font-size:1rem;color:var(--text2)">Riktig svar: <strong>${t2no(c.h,c.m)}</strong></div>
+      <button class="btn btn-teal" onclick="nextRound()" style="margin-top:6px;">Neste ➡️</button>`;
+    say(w);
+    wrongAnim();
+  }
+  updateStats();
+  save();
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ANIMATIONS
+   ════════════════════════════════════════════════════════════════ */
+function correctAnim(anchor){
+  if(S.simple) return;
+  const rect = anchor.getBoundingClientRect();
+  for(let i=0;i<5;i++){
+    setTimeout(()=>{
+      const star=document.createElement('div');
+      star.className='star-float';
+      star.textContent='⭐';
+      star.style.left=(rect.left+Math.random()*rect.width)+'px';
+      star.style.top=(rect.top)+'px';
+      document.body.appendChild(star);
+      setTimeout(()=>star.remove(),1300);
+    }, i*100);
+  }
+}
+
+function floatStars(el){
+  if(S.simple) return;
+  const rect=el.getBoundingClientRect();
+  for(let i=0;i<3;i++){
+    const star=document.createElement('div');
+    star.className='star-float';
+    star.textContent='✨';
+    star.style.left=(rect.left+Math.random()*rect.width)+'px';
+    star.style.top=rect.top+'px';
+    document.body.appendChild(star);
+    setTimeout(()=>star.remove(),1300);
+  }
+}
+
+function wrongAnim(){
+  if(S.simple) return;
+  const flash=document.createElement('div');
+  flash.className='wrong-flash';
+  document.body.appendChild(flash);
+  setTimeout(()=>flash.remove(),600);
+}
+
+function showCeleb(){
+  if(S.simple)return;
+  const c=document.getElementById('celeb');
+  const es=['🎉','🌟','💪','🎊','🏆'];
+  document.getElementById('celebE').textContent=es[Math.floor(Math.random()*es.length)];
+  document.getElementById('celebT').textContent=['Wow!','Fantastisk!','Kjempebra!','Strålende!'][Math.floor(Math.random()*4)];
+  c.classList.add('on');
+  makeConfetti();
+  setTimeout(()=>c.classList.remove('on'),1800);
+}
+
+function makeConfetti(){
+  if(S.simple)return;
+  const cols=['#F26B6B','#F2983A','#F5C842','#6BCF6B','#3DC8C8','#5A9EF2','#8B6BF2','#E06BBF'];
+  for(let i=0;i<30;i++){
+    const p=document.createElement('div');
+    p.className='confetti';
+    p.style.background=cols[Math.floor(Math.random()*cols.length)];
+    p.style.width=(6+Math.random()*8)+'px';
+    p.style.height=(6+Math.random()*8)+'px';
+    p.style.left=Math.random()*100+'vw';
+    p.style.top='-12px';
+    p.style.transform=`rotate(${Math.random()*360}deg)`;
+    document.body.appendChild(p);
+    const dur=1200+Math.random()*1500;
+    const drift=(Math.random()-0.5)*200;
+    p.animate([
+      {top:'-12px',opacity:1,transform:`translateX(0) rotate(0deg)`},
+      {top:'105vh',opacity:0,transform:`translateX(${drift}px) rotate(${360+Math.random()*360}deg)`}
+    ],{duration:dur,easing:'ease-in'});
+    setTimeout(()=>p.remove(),dur);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   FINISH
+   ════════════════════════════════════════════════════════════════ */
+function finishGame(){
+  const pct=S.score/S.total;
+  let stars=0;
+  if(pct>=0.9)stars=3; else if(pct>=0.7)stars=2; else if(pct>=0.5)stars=1;
+  if(stars>(S.stars[S.level]||0))S.stars[S.level]=stars;
+  if(pct>=0.5&&S.level<4&&!S.unlocked.includes(S.level+1))S.unlocked.push(S.level+1);
+  save();
+
+  const starStr='⭐'.repeat(stars)+'☆'.repeat(3-stars);
+  const msgs=['Prøv igjen – du klarer det!','Bra innsats!','Veldig bra!','Perfekt! Fantastisk!'];
+
+  // Self-competition messages
+  let selfMsg = '';
+  if (S.currentUser) {
+    const user = getUserById(S.currentUser.id);
+    if (user) {
+      const oldBest = user.best || 0;
+      if (S.best > oldBest) {
+        selfMsg = `<div class="self-compete" style="margin-top:10px;">🔥 Du slo din egen rekord! Ny beste rekke: ${S.best}</div>`;
+      }
+      if (user.prevSessionScore !== null && S.sessionScore > user.prevSessionScore) {
+        selfMsg += `<div class="self-compete" style="margin-top:8px;">📈 Bedre enn sist! ${S.sessionScore} vs ${user.prevSessionScore} poeng</div>`;
+      }
+    }
+  }
+
+  const a=document.getElementById('gameArea');
+  a.innerHTML=`
+    <div class="welcome">
+      <div style="font-size:4rem">🎉</div>
+      <h1>Ferdig!</h1>
+      <div style="font-size:2.2rem;letter-spacing:4px;">${starStr}</div>
+      <div style="font-size:1.4rem;font-weight:700;">${S.score} av ${S.total} riktige</div>
+      <div style="font-size:1.1rem;color:var(--text2)">${msgs[stars]}</div>
+      ${S.best>0?`<div style="font-size:0.95rem;color:var(--textMuted)">Beste rekke: 🔥 ${S.best}</div>`:''}
+      ${selfMsg}
+      <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;justify-content:center;">
+        <button class="btn btn-teal" onclick="startGame(${S.level})">🔄 Spill igjen</button>
+        <button class="btn btn-outline" onclick="exitGame()">📋 Velg nivå</button>
+        <button class="btn btn-outline" onclick="showScr('scrWelcome')">🏠 Hjem</button>
+      </div>
+    </div>`;
+  if(stars>=2)showCeleb();
+  say(msgs[stars]);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   STATS
+   ════════════════════════════════════════════════════════════════ */
+function updateStats(){
+  document.getElementById('sScore').textContent=S.score;
+  document.getElementById('sStreak').textContent=S.streak;
+  document.getElementById('sProg').textContent=`${Math.min(S.round,S.total)} / ${S.total}`;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SETTINGS
+   ════════════════════════════════════════════════════════════════ */
+function openSettings(){
+  document.getElementById('settingsOverlay').classList.add('on');
+  document.getElementById('sSimple').className=`toggle ${S.simple?'on':''}`;
+  document.getElementById('sSound').className=`toggle ${S.sound?'on':''}`;
+  document.getElementById('sSlow').className=`toggle ${S.slow?'on':''}`;
+}
+function closeSettings(){document.getElementById('settingsOverlay').classList.remove('on');}
+
+function toggleSimple(){
+  S.simple=!S.simple;
+  document.body.classList.toggle('simple-mode',S.simple);
+  document.getElementById('simpleToggle').classList.toggle('active',S.simple);
+  document.getElementById('sSimple').className=`toggle ${S.simple?'on':''}`;
+  save();
+}
+function toggleSound(){
+  S.sound=!S.sound;
+  document.getElementById('sSound').className=`toggle ${S.sound?'on':''}`;
+  if(!S.sound)speechSynthesis.cancel();
+  save();
+}
+function toggleSlow(){
+  S.slow=!S.slow;
+  document.getElementById('sSlow').className=`toggle ${S.slow?'on':''}`;
+  save();
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SAVE / LOAD  (USER-AWARE)
+   ════════════════════════════════════════════════════════════════ */
+function save(){
+  if (S.currentUser) {
+    const user = getUserById(S.currentUser.id);
+    if (user) {
+      user.stars = S.stars;
+      user.unlocked = S.unlocked;
+      user.best = S.best;
+      user.simple = S.simple;
+      user.sound = S.sound;
+      user.slow = S.slow;
+      // Keep cumulative total score updated
+      // We track sessionScore separately; total = base + session
+      if (!user._baseScore && user._baseScore !== 0) user._baseScore = user.score || 0;
+      user.score = user._baseScore + S.sessionScore;
+      user.lastPlayed = new Date().toISOString().split('T')[0];
+      saveUser(user);
+    }
+  }
+}
+
+function load(){
+  // On app start, check if there's a current user session
+  const userId = getCurrentUserId();
+  if (userId) {
+    const user = getUserById(userId);
+    if (user) {
+      loginUser(userId);
+      return;
+    }
+  }
+  // No valid session, show user screen
+  renderUserScreen();
+  showScr('scrUsers');
+}
+
+/* ════════════════════════════════════════════════════════════════
+   UTILS
+   ════════════════════════════════════════════════════════════════ */
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+
+/* INIT */
+load();
+</script>
+</body>
+</html>
