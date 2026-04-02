@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>TikTakAVO – Lær å lese klokken</title>
+<style>
+:root {
+  --bg: #FFF5EE; --bg2: #FFEEE0; --card: #FFFFFF; --text: #2D3748; --text2: #5A6578; --textMuted: #8896A6;
+  --teal: #44CCBB; --tealDark: #35A898; --tealLight: #E0F7F4; --orange: #F28C5A; --orangeLight: #FFF0E8;
+  --green: #5EC26A; --greenLight: #E8F8EA; --red: #E85D5D; --redLight: #FFECEC; --gold: #F5B83D;
+  --goldLight: #FFF8E8; --purple: #A87DE8; --pink: #E87DAE; --blue: #5A9EF2; --border: #E8DDD2;
+  --shadow1: 0 2px 12px rgba(0,0,0,0.06); --shadow2: 0 6px 28px rgba(0,0,0,0.10); --shadow3: 0 12px 40px rgba(0,0,0,0.14);
+  --r-sm: 14px; --r-md: 20px; --r-lg: 28px; --r-xl: 36px; --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --speed: 0.3s; --clockFrame: #44CCBB; --clockFace: #FFFFFF; --clockHourHand: #3A3A3A; --clockMinuteHand: #F28C5A;
+  --clockCenter: #44CCBB;
+}
+body.simple-mode {
+  --bg: #FFFFFF; --bg2: #F5F5F5; --card: #FFFFFF; --text: #111111; --text2: #333333; --teal: #008080; --tealLight: #F0F8F8;
+  --orange: #CC5500; --green: #228822; --greenLight: #F0F8F0; --red: #CC2222; --redLight: #FFF0F0; --border: #CCCCCC;
+  --shadow1: 0 1px 4px rgba(0,0,0,0.08); --shadow2: 0 2px 8px rgba(0,0,0,0.10); --speed: 0s; --clockFrame: #008080;
+  --clockHourHand: #000000; --clockMinuteHand: #CC5500; --clockCenter: #008080;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:18px;-webkit-tap-highlight-color:transparent;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;overflow-x:hidden;transition:background var(--speed),color var(--speed);}
+.app{max-width:860px;margin:0 auto;padding:12px 16px;min-height:100vh;display:flex;flex-direction:column;}
+.home-btn{position:fixed;top:10px;left:10px;z-index:600;background:var(--card);border:2px solid var(--border);border-radius:var(--r-sm);color:var(--text2);font-family:var(--font);font-size:.85rem;font-weight:700;padding:8px 14px;cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:5px;transition:all var(--speed);box-shadow:var(--shadow1);}
+.home-btn:hover{border-color:var(--teal);background:var(--tealLight);color:var(--teal);}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:6px 0;margin-bottom:8px;gap:10px;flex-wrap:wrap;}
+.logo{font-size:1.5rem;font-weight:800;color:var(--teal);display:flex;align-items:center;gap:8px;}
+.logo-clock{font-size:1.8rem;}
+.top-btns{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
+.tbtn{background:var(--card);border:2px solid var(--border);border-radius:var(--r-sm);padding:7px 13px;font-size:.85rem;cursor:pointer;font-family:var(--font);font-weight:700;color:var(--text2);min-height:40px;transition:all var(--speed);}
+.tbtn:hover{border-color:var(--teal);} .tbtn.active{background:var(--tealLight);border-color:var(--teal);color:var(--teal);}
+.ibtn{background:none;border:none;font-size:1.4rem;padding:6px;cursor:pointer;border-radius:var(--r-sm);min-height:40px;min-width:40px;display:flex;align-items:center;justify-content:center;}
+.ibtn:hover{background:var(--bg2);} 
+.stats{display:flex;gap:14px;align-items:center;padding:10px 16px;background:var(--card);border-radius:var(--r-md);box-shadow:var(--shadow1);margin-bottom:10px;flex-wrap:wrap;justify-content:center;}
+.stat{display:flex;align-items:center;gap:5px;font-size:1.05rem;font-weight:700;} .stat em{font-style:normal;font-size:1.2rem;}
+.scr{display:none;flex:1;flex-direction:column;} .scr.on{display:flex;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:60px;padding:14px 24px;font-size:1.1rem;font-weight:700;font-family:var(--font);border:none;border-radius:var(--r-md);cursor:pointer;transition:transform var(--speed),box-shadow var(--speed),background var(--speed);touch-action:manipulation;user-select:none;text-align:center;line-height:1.3;}
+.btn:active{transform:scale(.96);} .btn-teal{background:var(--teal);color:#FFF;box-shadow:0 4px 14px rgba(68,204,187,.35);} .btn-teal:hover{background:var(--tealDark);} .btn-outline{background:var(--card);color:var(--text);border:2px solid var(--border);box-shadow:var(--shadow1);} .btn-outline:hover{border-color:var(--teal);background:var(--tealLight);} .btn-sm{min-height:46px;padding:10px 16px;font-size:1rem;}
+.abtn{background:var(--card);color:var(--text);border:3px solid var(--border);box-shadow:var(--shadow1);min-height:68px;font-size:1.2rem;font-weight:700;width:100%;border-radius:var(--r-lg);position:relative;overflow:hidden;font-family:var(--font);cursor:pointer;padding:14px 16px;transition:all var(--speed);touch-action:manipulation;display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;}
+.abtn:hover{border-color:var(--teal);box-shadow:var(--shadow2);transform:translateY(-2px);} body.simple-mode .abtn:hover{transform:none;}
+.abtn.correct-answer{border-color:var(--green);background:var(--greenLight);animation:correctPop .4s ease;} .abtn.wrong-answer{border-color:var(--red);background:var(--redLight);opacity:.7;animation:wrongShake .4s ease;}
+body.simple-mode .abtn.correct-answer,body.simple-mode .abtn.wrong-answer{animation:none;}
+.abtn .spk{opacity:.45;font-size:.9rem;cursor:pointer;} .abtn .spk:hover{opacity:1;}
+@keyframes correctPop{0%{transform:scale(1)}30%{transform:scale(1.08)}60%{transform:scale(.97)}100%{transform:scale(1)}}
+@keyframes wrongShake{0%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}100%{transform:translateX(0)}}
+.welcome,.user-screen,.pin-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:18px;padding:16px 0;}
+.welcome h1,.user-screen h1{font-size:2rem;font-weight:800;color:var(--text);} .welcome p{font-size:1.05rem;color:var(--text2);max-width:460px;line-height:1.5;}
+.mode-grid{display:flex;flex-direction:column;gap:10px;width:100%;max-width:440px;}
+.mcard{display:flex;align-items:center;gap:14px;padding:16px 18px;background:var(--card);border:3px solid var(--border);border-radius:var(--r-lg);cursor:pointer;transition:all var(--speed);box-shadow:var(--shadow1);text-align:left;font-family:var(--font);width:100%;}
+.mcard:hover,.user-card:hover,.lvl-card:hover{border-color:var(--teal);box-shadow:var(--shadow2);transform:translateY(-3px);} body.simple-mode .mcard:hover,body.simple-mode .user-card:hover,body.simple-mode .lvl-card:hover{transform:none;}
+.mcard-ico{font-size:2.2rem;flex-shrink:0;width:52px;height:52px;background:var(--tealLight);border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.mcard-t{font-size:1.15rem;font-weight:700;} .mcard-d{font-size:.85rem;color:var(--textMuted);} 
+.feature-grid{display:grid;grid-template-columns:1fr;gap:12px;width:100%;max-width:760px;}
+.card{background:var(--card);border:2px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow1);padding:16px;}
+.section-title{font-size:1rem;font-weight:800;color:var(--text2);margin-bottom:10px;text-align:left;}
+.podium{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;align-items:end;}
+.podium-item{border-radius:20px;padding:14px 10px;text-align:center;background:linear-gradient(180deg,var(--tealLight),var(--card));border:2px solid var(--border);}
+.podium-item.rank1{min-height:170px;border-color:var(--gold);background:linear-gradient(180deg,var(--goldLight),var(--card));}
+.podium-item.rank2{min-height:145px;} .podium-item.rank3{min-height:130px;}
+.podium-rank{font-size:1.1rem;font-weight:800;} .podium-emoji{font-size:2.4rem;} .podium-name{font-weight:800;font-size:1rem;} .podium-score{font-size:.92rem;color:var(--text2);}
+.toplist{display:grid;gap:8px;margin-top:10px;} .topline{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:2px solid var(--border);border-radius:14px;background:var(--card);font-weight:700;}
+.mission-row,.badges-row,.theme-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.mission-card,.badge-chip,.theme-chip,.summary-chip{background:var(--card);border:2px solid var(--border);border-radius:16px;padding:10px 12px;min-width:110px;text-align:center;box-shadow:var(--shadow1);}
+.mission-card.done,.badge-chip.unlocked,.theme-chip.unlocked{background:var(--greenLight);border-color:var(--green);} .mission-small{font-size:.8rem;color:var(--textMuted);} .mission-title{font-weight:800;font-size:.92rem;}
+.badge-chip.locked,.theme-chip.locked{opacity:.5;filter:grayscale(.3);} 
+.user-section{width:100%;max-width:460px;} .user-section-title{font-size:1rem;font-weight:700;color:var(--text2);margin-bottom:10px;text-align:left;padding-left:4px;} .user-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.user-card,.lvl-card{display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px 10px;background:var(--card);border:3px solid var(--border);border-radius:var(--r-lg);cursor:pointer;transition:all var(--speed);box-shadow:var(--shadow1);font-family:var(--font);width:100%;position:relative;}
+.user-card .user-emoji,.lvl-animal{font-size:2.6rem;line-height:1;} .user-card .user-name,.lvl-name{font-size:1.05rem;font-weight:700;} .user-card .user-info,.lvl-desc{font-size:.78rem;color:var(--textMuted);text-align:center;}
+.user-card.new-user{border-style:dashed;border-color:var(--teal);opacity:.9;} .lvl-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:420px;} .lvl-card.locked{opacity:.45;cursor:not-allowed;filter:grayscale(.4);} .lvl-lock{position:absolute;bottom:-4px;right:-8px;font-size:1.2rem;background:var(--card);border-radius:50%;padding:2px;} .lvl-stars{font-size:.95rem;letter-spacing:2px;}
+.pin-user-display{font-size:3rem;line-height:1;} .pin-title{font-size:1.4rem;font-weight:700;} .pin-dots{display:flex;gap:12px;justify-content:center;margin:10px 0;} .pin-dot{width:22px;height:22px;border-radius:50%;border:3px solid var(--border);background:var(--card);} .pin-dot.filled{background:var(--teal);border-color:var(--teal);} .pin-dot.error{background:var(--red);border-color:var(--red);animation:wrongShake .4s ease;}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:280px;width:100%;} .pin-key{min-height:64px;font-size:1.6rem;font-weight:700;background:var(--card);border:2px solid var(--border);border-radius:var(--r-md);cursor:pointer;font-family:var(--font);transition:all var(--speed);display:flex;align-items:center;justify-content:center;} .pin-key:hover{border-color:var(--teal);background:var(--tealLight);} .pin-key.del{font-size:1.2rem;color:var(--red);} .pin-key.empty{visibility:hidden;}
+.pin-reveal{background:var(--tealLight);border:3px solid var(--teal);border-radius:var(--r-xl);padding:28px 24px;max-width:360px;width:100%;text-align:center;} .big-pin{font-size:3rem;font-weight:800;color:var(--teal);letter-spacing:10px;margin:10px 0;}
+.overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.35);z-index:500;align-items:center;justify-content:center;padding:20px;} .overlay.on{display:flex;} .scard{background:var(--card);border-radius:var(--r-xl);padding:28px 22px;max-width:420px;width:100%;box-shadow:var(--shadow3);max-height:90vh;overflow-y:auto;}
+.stitle{font-size:1.35rem;font-weight:800;margin-bottom:18px;text-align:center;} .srow{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--border);} .slbl{font-size:1.05rem;font-weight:600;}
+.toggle{position:relative;width:52px;height:28px;border-radius:14px;background:#CBD5E0;cursor:pointer;transition:background .3s;border:none;padding:0;} .toggle.on{background:var(--green);} .toggle::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;background:#FFF;border-radius:50%;transition:transform .3s;} .toggle.on::after{transform:translateX(24px);} 
+.danger-btn{margin-top:14px;width:100%;background:var(--redLight);color:var(--red);border:2px solid #FEC8C8;border-radius:var(--r-md);padding:12px;font-size:1rem;font-weight:700;cursor:pointer;font-family:var(--font);} 
+.backrow{display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-shrink:0;} .backrow .lbl{font-size:.9rem;color:var(--textMuted);font-weight:600;}
+.game{flex:1;display:flex;flex-direction:column;align-items:center;gap:14px;padding:4px 0;} .instruction{font-size:1.3rem;font-weight:700;text-align:center;color:var(--text);display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;}
+.replay{background:var(--tealLight);border:2px solid var(--teal);color:var(--teal);border-radius:50%;width:42px;height:42px;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all var(--speed);} .replay:hover{background:var(--teal);color:#FFF;}
+.pbar{width:100%;max-width:440px;height:8px;background:var(--bg2);border-radius:4px;overflow:hidden;} .pfill{height:100%;background:linear-gradient(90deg,var(--teal),var(--green));border-radius:4px;transition:width .5s ease;}
+.agrid{display:grid;gap:10px;width:100%;max-width:460px;} .agrid.c1{grid-template-columns:1fr;} .agrid.c2{grid-template-columns:1fr 1fr;} .agrid.c3{grid-template-columns:1fr 1fr 1fr;}
+.fb{text-align:center;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;} .fb-text{font-size:1.3rem;font-weight:800;} .fb-text.ok{color:var(--green);} .fb-text.no{color:var(--red);} .fb-mascot{font-size:2.2rem;line-height:1;} body.simple-mode .fb-mascot{display:none;}
+.set-target{font-size:1.7rem;font-weight:800;color:var(--teal);text-align:center;} .set-hint{font-size:.95rem;color:var(--textMuted);text-align:center;} .set-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:520px;} .mchip{min-height:76px;display:flex;align-items:center;justify-content:center;padding:10px;background:var(--card);border:3px solid var(--border);border-radius:var(--r-md);cursor:pointer;font-size:1.05rem;font-weight:700;font-family:var(--font);text-align:center;transition:all var(--speed);box-shadow:var(--shadow1);} .mchip.sel{border-color:var(--teal);background:var(--tealLight);} .mchip.hit{border-color:var(--green);background:var(--greenLight);opacity:.6;cursor:default;animation:correctPop .35s ease;} .mchip.miss{border-color:var(--red);background:var(--redLight);animation:wrongShake .35s ease;} .mchip svg{width:65px;height:65px;}
+.clock-wrap{position:relative;width:min(310px,78vw);height:min(340px,86vw);flex-shrink:0;} .clock-wrap.interactive{cursor:grab;} .clock-wrap.interactive:active{cursor:grabbing;} .clock-svg{width:100%;height:100%;}
+.celeb{position:fixed;top:0;left:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;z-index:1000;pointer-events:none;} .celeb.on{display:flex;} .celeb-inner{text-align:center;animation:celebBounce .6s ease-out;} body.simple-mode .celeb{display:none!important;}
+@keyframes celebBounce{0%{transform:scale(.3) rotate(-10deg);opacity:0}50%{transform:scale(1.15) rotate(3deg);opacity:1}70%{transform:scale(.95) rotate(-1deg)}100%{transform:scale(1) rotate(0deg);opacity:1}}
+.confetti{position:fixed;pointer-events:none;z-index:999;border-radius:3px;} .star-float{position:fixed;pointer-events:none;z-index:998;font-size:1.6rem;animation:starRise 1.2s ease-out forwards;} body.simple-mode .confetti,body.simple-mode .star-float{display:none!important;} @keyframes starRise{0%{opacity:1;transform:translateY(0) scale(.5)}100%{opacity:0;transform:translateY(-120px) scale(1.3)}} .wrong-flash{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(232,93,93,.08);z-index:997;pointer-events:none;animation:flashFade .5s ease forwards;} @keyframes flashFade{0%{opacity:1}100%{opacity:0}}
+.user-welcome-bar{display:flex;align-items:center;gap:8px;padding:6px 14px;background:var(--tealLight);border-radius:var(--r-sm);font-size:.9rem;font-weight:600;color:var(--teal);} .summary-grid{display:grid;gap:10px;width:100%;max-width:500px;} .self-compete{background:var(--goldLight);border:2px solid var(--gold);border-radius:var(--r-md);padding:12px 16px;text-align:center;font-weight:700;color:var(--text);font-size:1rem;animation:correctPop .5s ease;}
+
+.loading-screen{position:fixed;inset:0;z-index:1200;background:linear-gradient(180deg,var(--bg),var(--bg2));display:flex;align-items:center;justify-content:center;transition:opacity .25s ease,visibility .25s ease;}
+.loading-screen.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+.loading-card{background:var(--card);border:2px solid var(--border);border-radius:var(--r-xl);box-shadow:var(--shadow3);padding:26px 22px;min-width:260px;max-width:360px;text-align:center;}
+.loading-emoji{font-size:3rem;line-height:1;margin-bottom:8px;}
+.loading-title{font-size:1.35rem;font-weight:800;color:var(--text);margin-bottom:6px;}
+.loading-sub{font-size:.95rem;color:var(--text2);}
+.loading-spinner{width:34px;height:34px;border-radius:50%;border:4px solid var(--tealLight);border-top-color:var(--teal);margin:14px auto 0;animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.cloud-pill{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;border:2px solid var(--border);background:var(--card);font-size:.85rem;font-weight:700;color:var(--text2);box-shadow:var(--shadow1);}
+.cloud-pill.syncing{border-color:var(--teal);background:var(--tealLight);color:var(--teal);}
+
+@media(max-width:700px){.podium{grid-template-columns:1fr;}.podium-item.rank1,.podium-item.rank2,.podium-item.rank3{min-height:auto;} .top-btns{width:100%;justify-content:center;}.topbar{justify-content:center;} }
+@media(max-width:480px){html{font-size:16px;}.clock-wrap{width:min(260px,75vw);height:min(286px,83vw);} .welcome h1,.user-screen h1{font-size:1.65rem;} .user-grid,.lvl-grid{grid-template-columns:1fr 1fr;} .home-btn{top:8px;left:8px;padding:6px 10px;font-size:.78rem;} }
+</style>
+</head>
+<body>
+<a href="https://fikretkurtunyeri-a11y.github.io/portavo/" class="home-btn" title="Tilbake til alle apper">🏠 Alle apper</a>
+<div class="app">
+  <div class="topbar">
+    <div class="logo"><span class="logo-clock">🕐</span>TikTakAVO</div>
+    <div class="top-btns">
+      <span id="userWelcomeBar"></span>
+      <button class="tbtn" id="simpleToggle" onclick="toggleSimple()">🧠 Enkel</button>
+      <button class="ibtn" onclick="openSettings()" title="Innstillinger">⚙️</button>
+    </div>
+  </div>
+
+  <div class="stats" id="stats" style="display:none">
+    <div class="stat"><em>⭐</em><span id="sScore">0</span></div>
+    <div class="stat"><em>🔥</em><span id="sStreak">0</span></div>
+    <div class="stat"><em>🏅</em><span id="sCombo">x1</span></div>
+    <div class="stat"><em>📊</em><span id="sProg">0 spørsmål</span></div>
+  </div>
+
+  <div class="scr on" id="scrUsers"><div class="user-screen" id="userScreen"></div></div>
+  <div class="scr" id="scrPin"><div class="pin-screen" id="pinScreen"></div></div>
+
+  <div class="scr" id="scrWelcome">
+    <div class="welcome">
+      <div id="welcomeClock" style="width:140px;height:154px;"></div>
+      <h1>Lær å lese klokken!</h1>
+      <p>Velg en aktivitet for å starte. Samle poeng, fullfør oppdrag og slå din egen rekord.</p>
+      <div id="selfCompeteArea" style="width:100%;max-width:620px;"></div>
+      <div id="cloudStatusArea" style="width:100%;max-width:620px;"></div>
+      <div id="homeFeatureArea" class="feature-grid"></div>
+      <div class="mode-grid">
+        <button class="mcard" onclick="pickMode('read')"><span class="mcard-ico">👀</span><div><div class="mcard-t">Les klokka</div><div class="mcard-d">Se klokken – velg riktig tid</div></div></button>
+        <button class="mcard" onclick="pickMode('listen')"><span class="mcard-ico">👂</span><div><div class="mcard-t">Lytt og velg</div><div class="mcard-d">Hør tiden – velg riktig klokke</div></div></button>
+        <button class="mcard" onclick="pickMode('set')"><span class="mcard-ico">✋</span><div><div class="mcard-t">Still klokka</div><div class="mcard-d">Still viserne til riktig tid</div></div></button>
+        <button class="mcard" onclick="pickMode('match')"><span class="mcard-ico">🧩</span><div><div class="mcard-t">Koble sammen</div><div class="mcard-d">Match klokke med tekst</div></div></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="scr" id="scrLevels">
+    <div class="backrow"><button class="ibtn" onclick="showScr('scrWelcome')">⬅️</button><span class="lbl" id="lvlTitle">Velg nivå</span></div>
+    <div class="welcome"><h1 id="lvlHeading">Velg nivå</h1><div class="lvl-grid" id="lvlGrid"></div></div>
+  </div>
+
+  <div class="scr" id="scrGame">
+    <div class="backrow"><button class="ibtn" onclick="exitGame()">⬅️</button><span class="lbl" id="gameLabel">Nivå 1</span></div>
+    <div class="game" id="gameArea"></div>
+  </div>
+</div>
+
+<div class="overlay" id="settingsOverlay">
+  <div class="scard">
+    <div class="stitle">⚙️ Innstillinger</div>
+    <div class="srow"><span class="slbl">🧠 Enkel modus</span><button class="toggle" id="sSimple" onclick="toggleSimple()"></button></div>
+    <div class="srow"><span class="slbl">🔊 Lyd</span><button class="toggle on" id="sSound" onclick="toggleSound()"></button></div>
+    <div class="srow"><span class="slbl">🐢 Ro-modus</span><button class="toggle" id="sSlow" onclick="toggleSlow()"></button></div>
+    <div style="border-top:2px solid var(--border);margin-top:14px;padding-top:14px;">
+      <div class="stitle" style="font-size:1.1rem;margin-bottom:10px;">👤 Bruker</div>
+      <button class="danger-btn" onclick="resetCurrentUser()" style="background:var(--orangeLight);color:var(--orange);border-color:var(--orange);">🔄 Nullstill denne brukeren</button>
+      <button class="danger-btn" onclick="resetAllUsers()">🗑️ Slett alle brukere</button>
+    </div>
+    <button class="btn btn-teal" style="width:100%;margin-top:10px;" onclick="closeSettings()">Lukk</button>
+  </div>
+</div>
+
+<div class="celeb" id="celeb"><div class="celeb-inner"><div style="font-size:4rem" id="celebE">🎉</div><div style="font-size:1.5rem;font-weight:800;margin-top:6px" id="celebT">Flott!</div></div></div>
+
+<div class="loading-screen" id="loadingScreen">
+  <div class="loading-card">
+    <div class="loading-emoji">🕐</div>
+    <div class="loading-title">TikTakAVO lastes</div>
+    <div class="loading-sub" id="loadingSub">Henter siste poeng og brukere…</div>
+    <div class="loading-spinner"></div>
+  </div>
+</div>
+
+
+<script>
+const AVAILABLE_USERS=[
+  {id:'bruno',emoji:'🐻',name:'Bruno',mascot:'Bruno brummer glad!',q:'Hvilket dyr er Bruno?',a:['🐻 Bjørn','🐧 Pingvin','🐰 Kanin'],correct:0},
+  {id:'leo',emoji:'🦁',name:'Leo',mascot:'Leo heier på deg!',q:'Hvilket dyr er Leo?',a:['🦁 Løve','🦊 Rev','🐸 Frosk'],correct:0},
+  {id:'luna',emoji:'🐰',name:'Luna',mascot:'Luna hopper av glede!',q:'Hvilket dyr er Luna?',a:['🐰 Kanin','🐟 Fisk','🦉 Ugle'],correct:0},
+  {id:'pingu',emoji:'🐧',name:'Pingu',mascot:'Pingu klapper for deg!',q:'Hvilket dyr er Pingu?',a:['🐧 Pingvin','🐻 Bjørn','🐶 Hund'],correct:0},
+  {id:'roxy',emoji:'🦊',name:'Roxy',mascot:'Roxy sier: Bra jobba!',q:'Hvilket dyr er Roxy?',a:['🦊 Rev','🦋 Sommerfugl','🐠 Fisk'],correct:0},
+  {id:'freddy',emoji:'🐸',name:'Freddy',mascot:'Freddy hopper høyt!',q:'Hvilket dyr er Freddy?',a:['🐸 Frosk','🐱 Katt','🦁 Løve'],correct:0},
+  {id:'bella',emoji:'🦋',name:'Bella',mascot:'Bella svever stolt!',q:'Hvilket dyr er Bella?',a:['🦋 Sommerfugl','🐻 Bjørn','🐧 Pingvin'],correct:0},
+  {id:'milo',emoji:'🐶',name:'Milo',mascot:'Milo logrer!',q:'Hvilket dyr er Milo?',a:['🐶 Hund','🐠 Fisk','🦉 Ugle'],correct:0},
+  {id:'nemo',emoji:'🐠',name:'Nemo',mascot:'Nemo svømmer rundt!',q:'Hvilket dyr er Nemo?',a:['🐠 Fisk','🐰 Kanin','🦁 Løve'],correct:0},
+  {id:'kiki',emoji:'🐱',name:'Kiki',mascot:'Kiki maler fornøyd!',q:'Hvilket dyr er Kiki?',a:['🐱 Katt','🐻 Bjørn','🐸 Frosk'],correct:0},
+  {id:'olga',emoji:'🦉',name:'Olga',mascot:'Olga nikker klokt!',q:'Hvilket dyr er Olga?',a:['🦉 Ugle','🐧 Pingvin','🐶 Hund'],correct:0},
+  {id:'rex',emoji:'🦖',name:'Rex',mascot:'Rex tramper av glede!',q:'Hvilket dyr er Rex?',a:['🦖 Dinosaur','🐠 Fisk','🦊 Rev'],correct:0}
+];
+const BADGES=[
+  {id:'first50',label:'⏰ Første 50',check:u=>(u.score||0)>=50},
+  {id:'streak5',label:'🔥 5 på rad',check:u=>(u.best||0)>=5},
+  {id:'clockfriend',label:'🧠 Klokkevenn',check:u=>(u.totalAnswered||0)>=30},
+  {id:'score500',label:'🏆 500 poeng',check:u=>(u.score||0)>=500}
+];
+const THEMES=[
+  {id:'classic',label:'🎨 Klassisk',unlock:()=>true,bg:'#FFF5EE',frame:'#44CCBB',minute:'#F28C5A'},
+  {id:'night',label:'🌙 Kveld',unlock:u=>(u.score||0)>=120,bg:'#EEF3FF',frame:'#5A9EF2',minute:'#8B6BF2'},
+  {id:'forest',label:'🌿 Skog',unlock:u=>(u.score||0)>=250,bg:'#F2FFF3',frame:'#5EC26A',minute:'#35A898'}
+];
+const DAILY_MISSIONS=[
+  {id:'streak5',title:'Få 5 riktige på rad',desc:'🔥 Rekke',target:5,type:'bestStreakToday'},
+  {id:'play10',title:'Spill 10 spørsmål',desc:'📊 Antall',target:10,type:'answeredToday'},
+  {id:'whole3',title:'Finn 3 hele timer',desc:'🕐 Hele timer',target:3,type:'wholeToday'}
+];
+const CONTEXTS=[
+  {text:'Når spiser vi lunsj?',times:[{h:11,m:30},{h:12,m:0},{h:12,m:30}]},
+  {text:'Når går bussen?',times:[{h:8,m:0},{h:8,m:15},{h:8,m:30}]},
+  {text:'Når starter skolen?',times:[{h:8,m:30},{h:9,m:0},{h:7,m:45}]},
+  {text:'Når drikker vi kaffe?',times:[{h:10,m:0},{h:10,m:30},{h:9,m:45}]}
+];
+
+function getUsers(){try{return JSON.parse(localStorage.getItem('TikTakAVO_users')||'[]');}catch(e){return [];}}
+function saveUsers(users){localStorage.setItem('TikTakAVO_users',JSON.stringify(users));}
+function getCurrentUserId(){return localStorage.getItem('TikTakAVO_currentUser')||null;}
+function setCurrentUserId(id){localStorage.setItem('TikTakAVO_currentUser',id);} function clearCurrentUser(){localStorage.removeItem('TikTakAVO_currentUser');}
+function getUserById(id){return getUsers().find(u=>u.id===id)||null;} async function saveUser(user){const users=getUsers();const idx=users.findIndex(u=>u.id===user.id); if(idx>=0)users[idx]=user; else users.push(user); saveUsers(users); if(window.saveUserToCloud){window.saveUserToCloud(user).catch(e=>console.error('Cloud save failed',e));}}
+function generatePin(){return String(Math.floor(1000+Math.random()*9000));}
+function todayKey(){return new Date().toISOString().split('T')[0];}
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function rand(a){return a[Math.floor(Math.random()*a.length)];}
+const S={mode:null,level:1,score:0,streak:0,best:0,combo:1,round:0,total:null,answer:null,simple:false,sound:true,slow:false,stars:{1:0,2:0,3:0,4:0},unlocked:[1],answered:false,setH:12,setM:0,dragging:null,matchPairs:[],matchSel:null,matchCount:0,spokenIntro:false,currentUser:null,sessionScore:0,prevSessionScore:null,sessionAnswered:0,sessionWholeHours:0};
+
+let pinBuffer='',pinTarget='',pinHelpStep=0;
+window.showLoading=function(msg){const el=document.getElementById('loadingScreen');const sub=document.getElementById('loadingSub'); if(sub&&msg)sub.textContent=msg; if(el)el.classList.remove('hidden');};
+window.hideLoading=function(){const el=document.getElementById('loadingScreen'); if(el)el.classList.add('hidden');};
+function setCloudStatus(text,isSyncing=false){const area=document.getElementById('cloudStatusArea'); if(!area)return; area.innerHTML=`<div class="cloud-pill ${isSyncing?'syncing':''}">☁️ ${text}</div>`;} window.setCloudStatus=setCloudStatus;
+
+function ensureUserDefaults(u){
+  u.score=u.score||0; u.best=u.best||0; u.level=u.level||1; u.stars=u.stars||{1:0,2:0,3:0,4:0}; u.unlocked=u.unlocked||[1];
+  u.lastPlayed=u.lastPlayed||todayKey(); u.simple=!!u.simple; u.sound=u.sound!==undefined?u.sound:true; u.slow=!!u.slow; u.prevSessionScore=u.prevSessionScore??null;
+  u.totalAnswered=u.totalAnswered||0; u.badges=u.badges||[]; u.theme=u.theme||'classic'; u.dayStats=u.dayStats||{}; u.dailyMissions=u.dailyMissions||buildDailyMissions();
+  resetDailyIfNeeded(u); return u;
+}
+function buildDailyMissions(){return DAILY_MISSIONS.map(m=>({id:m.id,progress:0,done:false}));}
+function resetDailyIfNeeded(u){
+  const today=todayKey();
+  if(!u.dayStats.date || u.dayStats.date!==today){u.dayStats={date:today,answered:0,whole:0,bestStreak:0};u.dailyMissions=buildDailyMissions();}
+}
+function missionStatus(u,id){return u.dailyMissions.find(m=>m.id===id) || {progress:0,done:false};}
+function updateDailyMission(u,id,value){const m=u.dailyMissions.find(x=>x.id===id); if(!m)return; m.progress=Math.max(m.progress,value); const def=DAILY_MISSIONS.find(d=>d.id===id); if(def && m.progress>=def.target) m.done=true;}
+function unlockBadges(u){BADGES.forEach(b=>{if(b.check(u)&&!u.badges.includes(b.id))u.badges.push(b.id);});}
+function topUsers(){return [...getUsers()].map(ensureUserDefaults).sort((a,b)=>(b.score||0)-(a.score||0)).slice(0,5);} 
+function availableThemes(u){return THEMES.map(t=>({...t,open:t.unlock(u)}));}
+function applyThemeFromUser(u){const t=THEMES.find(x=>x.id===(u?.theme||'classic'))||THEMES[0]; document.documentElement.style.setProperty('--bg',t.bg); document.documentElement.style.setProperty('--clockFrame',t.frame); document.documentElement.style.setProperty('--clockMinuteHand',t.minute);}
+
+function renderUserScreen(){
+  const users=getUsers().map(ensureUserDefaults), takenIds=users.map(u=>u.id), available=AVAILABLE_USERS.filter(a=>!takenIds.includes(a.id));
+  let html=`<h1>🕐 TikTakAVO</h1><p style="color:var(--text2);font-size:1rem;">Hvem spiller i dag?</p>`;
+  const tops=topUsers();
+  if(tops.length){
+    html+=`<div class="user-section" style="max-width:760px;"><div class="card"><div class="section-title">🏆 Top 5 stjerner</div><div class="podium">`+
+    tops.slice(0,3).map((u,idx)=>{const d=AVAILABLE_USERS.find(a=>a.id===u.id)||{emoji:'👤',name:u.id}; const rank=idx===0?2:idx===1?1:3; return `<div class="podium-item rank${rank}"><div class="podium-rank">${idx===0?'🥇':idx===1?'🥈':'🥉'}</div><div class="podium-emoji">${d.emoji}</div><div class="podium-name">${d.name}</div><div class="podium-score">⭐ ${u.score}</div></div>`;}).join('')+
+    `</div><div class="toplist">`+
+    tops.map((u,i)=>{const d=AVAILABLE_USERS.find(a=>a.id===u.id)||{emoji:'👤',name:u.id}; return `<div class="topline"><span>${i+1}. ${d.emoji} ${d.name}</span><span>⭐ ${u.score}</span></div>`;}).join('')+
+    `</div></div></div>`;
+  }
+  if(users.length){html+=`<div class="user-section"><div class="user-section-title">👋 Velkommen tilbake</div><div class="user-grid">`+
+    users.map(u=>{const d=AVAILABLE_USERS.find(a=>a.id===u.id)||{emoji:'👤',name:u.id}; return `<button class="user-card" onclick="startLogin('${u.id}')"><div class="user-emoji">${d.emoji}</div><div class="user-name">${d.name}</div><div class="user-info">⭐ ${u.score} poeng</div></button>`;}).join('')+`</div></div>`;}
+  if(available.length){html+=`<div class="user-section" style="margin-top:12px;"><div class="user-section-title">✨ Ny bruker</div><div class="user-grid">`+
+    available.map(a=>`<button class="user-card new-user" onclick="createUser('${a.id}')"><div class="user-emoji">${a.emoji}</div><div class="user-name">${a.name}</div><div class="user-info" style="color:var(--teal);">Trykk for å starte</div></button>`).join('')+`</div></div>`;}
+  document.getElementById('userScreen').innerHTML=html;
+}
+
+async function createUser(id){
+  const pin=generatePin(), def=AVAILABLE_USERS.find(a=>a.id===id);
+  const user=ensureUserDefaults({id,pin,score:0,best:0,level:1,stars:{1:0,2:0,3:0,4:0},unlocked:[1],lastPlayed:todayKey(),simple:false,sound:true,slow:false,prevSessionScore:null,totalAnswered:0,badges:[],theme:'classic'});
+  await saveUser(user);
+  document.getElementById('pinScreen').innerHTML=`<div class="pin-reveal"><div style="font-size:3.5rem;">${def.emoji}</div><div style="font-size:1.3rem;font-weight:700;margin:8px 0;">Hei, ${def.name}!</div><div style="font-size:1.1rem;color:var(--text2);font-weight:600;">Din kode:</div><div class="big-pin">${pin}</div><div style="font-size:1rem;color:var(--red);font-weight:700;margin-top:6px;">Husk denne koden!</div><button class="btn btn-teal" style="margin-top:18px;width:100%;" onclick="loginUser('${id}')">Jeg har husket den! ✅</button></div>`;
+  showScr('scrPin');
+}
+function startLogin(id){pinBuffer='';pinTarget=id;pinHelpStep=0;renderPinScreen(id,false);showScr('scrPin');}
+function renderPinScreen(id,error){
+  const user=getUserById(id); if(!user)return backToUsers(); const def=AVAILABLE_USERS.find(a=>a.id===id)||{emoji:'👤',name:id};
+  const dots=[0,1,2,3].map(i=>`<div class="pin-dot ${i<pinBuffer.length?'filled':''} ${error?'error':''}"></div>`).join('');
+  document.getElementById('pinScreen').innerHTML=`<div class="pin-user-display">${def.emoji}</div><div class="pin-title">${def.name}</div><div style="font-size:.95rem;color:var(--text2);">Skriv inn din kode</div>${error?'<div style="color:var(--red);font-weight:700;font-size:1rem;">Feil kode! Prøv igjen.</div>':''}<div class="pin-dots">${dots}</div><div class="pin-pad">${[1,2,3,4,5,6,7,8,9].map(n=>`<button class="pin-key" onclick="pinInput('${n}')">${n}</button>`).join('')}<button class="pin-key empty"></button><button class="pin-key" onclick="pinInput('0')">0</button><button class="pin-key del" onclick="pinDelete()">⌫</button></div><button class="btn btn-outline btn-sm" onclick="showCodeHelp()" style="margin-top:10px;">💡 Kodehjelp</button><button class="btn btn-outline btn-sm" onclick="backToUsers()">⬅️ Tilbake</button>`;
+}
+function pinInput(d){if(pinBuffer.length>=4)return; pinBuffer+=d; renderPinScreen(pinTarget,false); if(pinBuffer.length===4){setTimeout(()=>{const u=getUserById(pinTarget); if(u&&u.pin===pinBuffer)loginUser(pinTarget); else {pinBuffer=''; renderPinScreen(pinTarget,true);}},180);}}
+function pinDelete(){pinBuffer=pinBuffer.slice(0,-1);renderPinScreen(pinTarget,false);} function backToUsers(){pinBuffer='';pinTarget='';renderUserScreen();showScr('scrUsers');}
+function showCodeHelp(){
+  const def=AVAILABLE_USERS.find(a=>a.id===pinTarget); if(!def)return; const user=getUserById(pinTarget); if(!user)return;
+  pinHelpStep++;
+  if(pinHelpStep===1){document.getElementById('pinScreen').innerHTML=`<div class="pin-user-display">${def.emoji}</div><div class="pin-title">Kodehjelp</div><div style="font-size:1rem;color:var(--text2);">Svar på et lite spørsmål</div><div class="card" style="max-width:340px;width:100%;"><div class="mission-title" style="margin-bottom:10px;">${def.q}</div>${def.a.map((x,i)=>`<button class="btn btn-outline btn-sm" style="width:100%;margin-top:8px;" onclick="answerCodeHelp(${i})">${x}</button>`).join('')}</div><button class="btn btn-outline btn-sm" onclick="renderPinScreen('${pinTarget}',false)">⬅️ Tilbake</button>`;}
+  else if(pinHelpStep===2){document.getElementById('pinScreen').innerHTML=`<div class="pin-user-display">${def.emoji}</div><div class="pin-title">En til</div><div class="card" style="max-width:340px;width:100%;"><div class="mission-title" style="margin-bottom:10px;">Liker du dyr?</div><button class="btn btn-outline btn-sm" style="width:100%;margin-top:8px;" onclick="revealPinHelp()">Ja 💚</button><button class="btn btn-outline btn-sm" style="width:100%;margin-top:8px;" onclick="revealPinHelp()">Veldig mye 🐾</button></div>`;}
+  else revealPinHelp();
+}
+function answerCodeHelp(i){const def=AVAILABLE_USERS.find(a=>a.id===pinTarget); if(i===def.correct) revealPinHelp(); else showCodeHelp();}
+function revealPinHelp(){const user=getUserById(pinTarget), def=AVAILABLE_USERS.find(a=>a.id===pinTarget); document.getElementById('pinScreen').innerHTML=`<div class="pin-reveal"><div style="font-size:3rem;">${def.emoji}</div><div style="font-size:1.2rem;font-weight:700;">Her kommer koden din</div><div class="big-pin">${user.pin}</div><div style="font-size:1rem;color:var(--text2);">Nå kan du logge inn igjen.</div><button class="btn btn-teal" style="width:100%;margin-top:14px;" onclick="renderPinScreen('${pinTarget}',false)">Tilbake til kode</button></div>`;}
+
+async function loginUser(id){
+  let user=getUserById(id); if(!user)return; user=ensureUserDefaults(user); setCurrentUserId(id); S.currentUser=user; S.stars=user.stars; S.unlocked=user.unlocked; S.best=user.best; S.simple=user.simple; S.sound=user.sound; S.slow=user.slow; S.prevSessionScore=user.prevSessionScore; S.sessionScore=0; S.sessionAnswered=0; S.sessionWholeHours=0; S.score=0; S.streak=0; S.combo=1;
+  document.body.classList.toggle('simple-mode',S.simple); document.getElementById('simpleToggle').classList.toggle('active',S.simple); applyThemeFromUser(user);
+  const def=AVAILABLE_USERS.find(a=>a.id===id)||{emoji:'👤',name:id}; document.getElementById('userWelcomeBar').innerHTML=`<button class="tbtn" onclick="logoutUser()" title="Bytt bruker">${def.emoji} ${def.name} ↺</button>`;
+  user.lastPlayed=todayKey(); await saveUser(user); renderSelfCompete(); renderHomeFeatures(); showScr('scrWelcome'); drawWelcomeClock();
+}
+async function logoutUser(){if(S.currentUser){const user=getUserById(S.currentUser.id); if(user){user.prevSessionScore=S.sessionScore; await saveUser(user);}} speechSynthesis.cancel(); S.currentUser=null; clearCurrentUser(); document.getElementById('userWelcomeBar').innerHTML=''; document.getElementById('selfCompeteArea').innerHTML=''; document.getElementById('homeFeatureArea').innerHTML=''; const csa=document.getElementById('cloudStatusArea'); if(csa)csa.innerHTML=''; renderUserScreen(); showScr('scrUsers');}
+
+function renderSelfCompete(){
+  const area=document.getElementById('selfCompeteArea'); if(!S.currentUser){area.innerHTML=''; return;} const user=ensureUserDefaults(getUserById(S.currentUser.id));
+  const msgs=[]; if(user.best>0)msgs.push(`🔥 Beste rekke: ${user.best}`); if(user.score>0)msgs.push(`⭐ Totalt: ${user.score} poeng`); if(user.prevSessionScore!==null&&user.prevSessionScore>0)msgs.push(`📊 Forrige økt: ${user.prevSessionScore} poeng`); const mascot=AVAILABLE_USERS.find(a=>a.id===user.id)?.mascot||'';
+  area.innerHTML=`${msgs.length?`<div class="self-compete">${msgs.join(' &nbsp;·&nbsp; ')}</div>`:''}${mascot?`<div class="card" style="margin-top:10px;font-weight:700;">${mascot}</div>`:''}`;
+}
+function renderHomeFeatures(){
+  const area=document.getElementById('homeFeatureArea'); if(!S.currentUser){area.innerHTML=''; return;} const user=ensureUserDefaults(getUserById(S.currentUser.id));
+  const missions=DAILY_MISSIONS.map(def=>{const st=missionStatus(user,def.id); return `<div class="mission-card ${st.done?'done':''}"><div class="mission-title">${def.title}</div><div class="mission-small">${Math.min(st.progress,def.target)} / ${def.target}</div></div>`;}).join('');
+  const badges=BADGES.map(b=>`<div class="badge-chip ${user.badges.includes(b.id)?'unlocked':'locked'}">${b.label}</div>`).join('');
+  const themes=availableThemes(user).map(t=>`<button class="theme-chip ${t.open?'unlocked':'locked'}" ${t.open?`onclick="selectTheme('${t.id}')"`:''}>${t.label}</button>`).join('');
+  area.innerHTML=`<div class="card"><div class="section-title">📅 Dagens mini-oppdrag</div><div class="mission-row">${missions}</div></div><div class="card"><div class="section-title">🏅 Rosetter</div><div class="badges-row">${badges}</div></div><div class="card"><div class="section-title">🎨 Tema-belønninger</div><div class="theme-row">${themes}</div></div>`;
+}
+async function selectTheme(id){if(!S.currentUser)return; const user=ensureUserDefaults(getUserById(S.currentUser.id)); const t=THEMES.find(x=>x.id===id); if(!t||!t.unlock(user))return; user.theme=id; await saveUser(user); applyThemeFromUser(user); drawWelcomeClock(); renderHomeFeatures();}
+
+async function resetCurrentUser(){if(!S.currentUser)return; if(confirm('Nullstille all fremgang for denne brukeren?')){const def=AVAILABLE_USERS.find(a=>a.id===S.currentUser.id); const user=ensureUserDefaults({id:S.currentUser.id,pin:getUserById(S.currentUser.id).pin,score:0,best:0,level:1,stars:{1:0,2:0,3:0,4:0},unlocked:[1],lastPlayed:todayKey(),simple:S.simple,sound:S.sound,slow:S.slow,prevSessionScore:null,totalAnswered:0,badges:[],theme:'classic'}); await saveUser(user); closeSettings(); await loginUser(user.id);}}
+async function resetAllUsers(){if(confirm('Slette ALLE brukere og all fremgang?')){localStorage.removeItem('TikTakAVO_users'); localStorage.removeItem('TikTakAVO_currentUser'); if(window.deleteAllCloudUsers){try{await window.deleteAllCloudUsers();}catch(e){console.error(e);}} location.reload();}}
+
+const HN=['tolv','ett','to','tre','fire','fem','seks','syv','åtte','ni','ti','elleve','tolv'];
+function t2no(h,m){const h12=h%12,nx=(h12+1)%12; if(m===0)return `klokken ${HN[h12]}`; if(m===30)return `halv ${HN[nx]}`; if(m===15)return `kvart over ${HN[h12]}`; if(m===45)return `kvart på ${HN[nx]}`; if(m===5)return `fem over ${HN[h12]}`; if(m===10)return `ti over ${HN[h12]}`; if(m===20)return `ti på halv ${HN[nx]}`; if(m===25)return `fem på halv ${HN[nx]}`; if(m===35)return `fem over halv ${HN[nx]}`; if(m===40)return `ti over halv ${HN[nx]}`; if(m===50)return `ti på ${HN[nx]}`; if(m===55)return `fem på ${HN[nx]}`; return digi(h,m);} function digi(h,m){return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;}
+function rndTime(lv){const h=Math.floor(Math.random()*12)+1; let m; switch(lv){case 1:m=0;break;case 2:m=[0,30][Math.floor(Math.random()*2)];break;case 3:m=[0,15,30,45][Math.floor(Math.random()*4)];break;case 4:m=Math.floor(Math.random()*12)*5;break;default:m=0;} return {h,m};}
+function genWrongs(correct,lv,n){const w=[],seen=new Set([`${correct.h}-${correct.m}`]);let safety=0; while(w.length<n&&safety<100){const t=rndTime(lv),k=`${t.h}-${t.m}`; if(!seen.has(k)){seen.add(k);w.push(t);} safety++;} return w;}
+function optCount(){if(S.slow)return 2; if(S.round<=5)return 2; if(S.round<=12)return 3; return S.level<=2?3:4;}
+
+function say(txt,cb){if(!S.sound){if(cb)cb();return;} speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(txt); u.lang='nb-NO'; u.rate=S.slow?.68:.85; const v=speechSynthesis.getVoices().find(v=>v.lang.startsWith('nb')||v.lang.startsWith('no')); if(v)u.voice=v; if(cb)u.onend=cb; speechSynthesis.speak(u);} if(typeof speechSynthesis!=='undefined'){speechSynthesis.getVoices();}
+
+const NCOL=['#F26B6B','#F2983A','#F5C842','#6BCF6B','#3DC8C8','#5A9EF2','#8B6BF2','#E06BBF','#F26B6B','#F2983A','#6BCF6B','#5A9EF2'];
+const DCOL=['#F26B6B','#F2983A','#F5C842','#6BCF6B','#3DC8C8','#5A9EF2','#8B6BF2','#E06BBF','#F26B6B','#F2983A','#6BCF6B','#5A9EF2'];
+function clockSVG(h,m,opts={}){const {w=300,mini=false,interactive=false,id='clk'}=opts; const s=mini?60:w,cx=s/2,cy=mini?s/2:s/2+s*0.05,r=mini?s*0.42:s*0.39,frameR=r*1.15,earR=mini?r*0.25:r*0.28,earOff=mini?r*0.72:r*0.78; const mA=(m/60)*360-90,hA=((h%12)/12)*360+(m/60)*30-90,mr=mA*Math.PI/180,hr=hA*Math.PI/180,mLen=r*0.78,hLen=r*0.52,mx=cx+Math.cos(mr)*mLen,my=cy+Math.sin(mr)*mLen,hx=cx+Math.cos(hr)*hLen,hy=cy+Math.sin(hr)*hLen; let ticks=''; if(!mini){for(let i=0;i<60;i++){const a=(i/60)*360-90,rd=a*Math.PI/180;if(i%5===0)continue;const i1=r*0.88,i2=r*0.94,x1=cx+Math.cos(rd)*i1,y1=cy+Math.sin(rd)*i1,x2=cx+Math.cos(rd)*i2,y2=cy+Math.sin(rd)*i2;ticks+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#D4D4D4" stroke-width="1.5" stroke-linecap="round"/>`;}} let dots=''; if(!mini){for(let i=0;i<12;i++){const a=(i/12)*360-90,rd=a*Math.PI/180,dotR=r*0.96,dx=cx+Math.cos(rd)*dotR,dy=cy+Math.sin(rd)*dotR; dots+=`<circle cx="${dx}" cy="${dy}" r="3.5" fill="${DCOL[i]}"/>`;}} let nums=''; const numR=mini?r*0.65:r*0.72,bubR=mini?s*0.07:r*0.12; for(let i=1;i<=12;i++){const a=(i/12)*360-90,rd=a*Math.PI/180,nx=cx+Math.cos(rd)*numR,ny=cy+Math.sin(rd)*numR,col=NCOL[i-1],fs=mini?s*0.16:r*0.19; nums+=`<circle cx="${nx}" cy="${ny}" r="${bubR}" fill="${col}" opacity="0.85"/><text x="${nx}" y="${ny}" text-anchor="middle" dominant-baseline="central" font-size="${fs}" font-weight="800" fill="#FFF" font-family="var(--font)">${i}</text>`;} const viewH=mini?s:s*1.1,earY=cy-frameR*0.7,glow=(!mini&&!S.simple)?`<circle cx="${cx}" cy="${cy}" r="${frameR+4}" fill="none" stroke="var(--clockFrame)" stroke-width="2" opacity="0.25"/>`:''; return `<svg viewBox="0 0 ${s} ${viewH}" class="clock-svg" id="${id}" xmlns="http://www.w3.org/2000/svg" style="${interactive?'cursor:grab;':''}">${mini?'':`<circle cx="${cx-earOff}" cy="${earY}" r="${earR}" fill="var(--clockFrame)"/><circle cx="${cx+earOff}" cy="${earY}" r="${earR}" fill="var(--clockFrame)"/><circle cx="${cx-earOff}" cy="${earY}" r="${earR*0.55}" fill="var(--clockFrame)" opacity="0.6"/><circle cx="${cx+earOff}" cy="${earY}" r="${earR*0.55}" fill="var(--clockFrame)" opacity="0.6"/>`}${glow}<circle cx="${cx}" cy="${cy}" r="${frameR}" fill="var(--clockFrame)"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="var(--clockFace)"/>${ticks}${dots}${nums}<line x1="${cx}" y1="${cy}" x2="${hx}" y2="${hy}" stroke="var(--clockHourHand)" stroke-width="${mini?3:7}" stroke-linecap="round"/><line x1="${cx}" y1="${cy}" x2="${mx}" y2="${my}" stroke="var(--clockMinuteHand)" stroke-width="${mini?2:4.5}" stroke-linecap="round"/><circle cx="${cx}" cy="${cy}" r="${mini?3:8}" fill="var(--clockCenter)"/><circle cx="${cx}" cy="${cy}" r="${mini?1.5:4}" fill="#FFF"/></svg>`;}
+function drawWelcomeClock(){const el=document.getElementById('welcomeClock'); if(el){const now=new Date(); el.innerHTML=clockSVG(now.getHours()%12||12,Math.floor(now.getMinutes()/5)*5,{w:140,id:'wclk'});}}
+function showScr(id){document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on')); document.getElementById(id).classList.add('on'); document.getElementById('stats').style.display=id==='scrGame'?'flex':'none';}
+
+const ANIMALS=['🦉','🐻','🦊','🦁']; const LVL_INFO=[{n:1,name:'Hele timer',desc:'klokken ett, to, tre...'},{n:2,name:'Halve timer',desc:'halv to, halv tre...'},{n:3,name:'Kvarter',desc:'kvart over, kvart på'},{n:4,name:'5-minutt',desc:'fem over, ti på...'}];
+function pickMode(mode){S.mode=mode; const titles={read:'👀 Les klokka',listen:'👂 Lytt og velg',set:'✋ Still klokka',match:'🧩 Koble sammen'}; document.getElementById('lvlHeading').textContent=titles[mode]||'Velg nivå'; document.getElementById('lvlTitle').textContent=titles[mode]||'Velg nivå'; renderLevels(); showScr('scrLevels');}
+function renderLevels(){const g=document.getElementById('lvlGrid'); g.innerHTML=LVL_INFO.map(lv=>{const ok=S.unlocked.includes(lv.n),st=S.stars[lv.n]||0,starStr='⭐'.repeat(Math.min(st,3))+'☆'.repeat(Math.max(0,3-st)); return `<button class="lvl-card ${ok?'':'locked'}" onclick="${ok?`startGame(${lv.n})`:'void(0)'}"><div class="lvl-animal">${ANIMALS[lv.n-1]}${ok?'':`<span class="lvl-lock">🔒</span>`}</div><div class="lvl-name">${lv.name}</div><div class="lvl-desc">${lv.desc}</div><div class="lvl-stars">${starStr}</div></button>`;}).join('');}
+
+function startGame(lv){S.level=lv; S.round=0; S.score=0; S.streak=0; S.combo=1; S.answered=false; S.spokenIntro=false; updateStats(); document.getElementById('gameLabel').textContent=`Nivå ${lv} – ${LVL_INFO[lv-1].name}`; showScr('scrGame'); nextRound();}
+function exitGame(){speechSynthesis.cancel(); renderSelfCompete(); renderHomeFeatures(); showScr('scrLevels');}
+function nextRound(){S.round++; S.answered=false; updateStats(); if(S.mode==='match')renderMatch(); else if(S.mode==='read')renderRead(); else if(S.mode==='listen')renderListen(); else if(S.mode==='set')renderSet();}
+function maybeContextPrompt(){if(S.level>=2 && Math.random()<0.22) return rand(CONTEXTS); return null;}
+function scoreForAnswer(){return 10 + Math.max(0,(S.combo-1)*2);} 
+function comboLabel(){return `x${S.combo}`;}
+function countWholeHour(t){return t.m===0;}
+async function recordAnswerMetrics(correct){if(!S.currentUser)return; let user=ensureUserDefaults(getUserById(S.currentUser.id)); user.totalAnswered+=1; user.dayStats.answered+=1; updateDailyMission(user,'play10',user.dayStats.answered); if(correct&&S.answer&&countWholeHour(S.answer)){user.dayStats.whole+=1; updateDailyMission(user,'whole3',user.dayStats.whole);} if(correct){user.dayStats.bestStreak=Math.max(user.dayStats.bestStreak,S.streak); updateDailyMission(user,'streak5',user.dayStats.bestStreak);} unlockBadges(user); await saveUser(user);}
+
+function renderRead(){const ctxPrompt=maybeContextPrompt(); const c=ctxPrompt?rand(ctxPrompt.times):rndTime(S.level); S.answer=c; const n=optCount(),wrongs=genWrongs(c,S.level,n-1),opts=shuffle([c,...wrongs]),cls=n<=2?'c1':'c2',a=document.getElementById('gameArea'); const question=ctxPrompt?ctxPrompt.text:'Hva er klokken?'; a.innerHTML=`<div class="instruction">${question}<button class="replay" onclick="say('${question.replace(/'/g,"\\'")}')">🔊</button></div><div class="pbar"><div class="pfill" style="width:${Math.min((S.round-1)%20,20)/20*100}%"></div></div><div class="clock-wrap">${clockSVG(c.h,c.m)}</div><div class="agrid ${cls}" id="aGrid">${opts.map(o=>`<button class="abtn" onclick="checkAns(${o.h},${o.m},this)" data-h="${o.h}" data-m="${o.m}">${t2no(o.h,o.m)} <span class="spk" onclick="event.stopPropagation();say('${t2no(o.h,o.m).replace(/'/g,"\\'")}')">🔊</span></button>`).join('')}</div><div class="fb" id="fb"></div>`; if(!S.spokenIntro){say(question);S.spokenIntro=true;}}
+function renderListen(){const c=rndTime(S.level); S.answer=c; const n=optCount(),wrongs=genWrongs(c,S.level,n-1),opts=shuffle([c,...wrongs]),cls=n<=2?'c2':'c3',a=document.getElementById('gameArea'); a.innerHTML=`<div class="instruction">Lytt – velg riktig klokke <button class="replay" onclick="sayTime()">🔊</button></div><div class="pbar"><div class="pfill" style="width:${Math.min((S.round-1)%20,20)/20*100}%"></div></div><div class="agrid ${cls}" id="aGrid" style="max-width:500px;">${opts.map(o=>`<button class="abtn" onclick="checkAns(${o.h},${o.m},this)" data-h="${o.h}" data-m="${o.m}" style="flex-direction:column;padding:10px;">${clockSVG(o.h,o.m,{w:60,mini:true,id:`mc${o.h}_${o.m}`})}<span style="font-size:.95rem;margin-top:4px;">${digi(o.h,o.m)}</span></button>`).join('')}</div><div class="fb" id="fb"></div>`; if(!S.spokenIntro){say('Lytt, og velg riktig klokke.',()=>setTimeout(()=>sayTime(),300)); S.spokenIntro=true;} else setTimeout(()=>sayTime(),150);}
+function sayTime(){const t=S.answer; say(t2no(t.h,t.m));}
+function renderSet(){const c=rndTime(S.level); S.answer=c; S.setH=12; S.setM=0; const a=document.getElementById('gameArea'), timeStr=t2no(c.h,c.m).replace(/'/g,"\\'"); a.innerHTML=`<div class="instruction">Still klokken til: <button class="replay" onclick="say('Still klokken til ${timeStr}')">🔊</button></div><div class="pbar"><div class="pfill" style="width:${Math.min((S.round-1)%20,20)/20*100}%"></div></div><div class="set-target">${t2no(c.h,c.m)}</div><div class="set-hint">(${digi(c.h,c.m)})</div><div class="clock-wrap interactive" id="iClock">${clockSVG(S.setH,S.setM,{interactive:true,id:'sClk'})}</div><div class="set-btns"><button class="btn btn-outline btn-sm" onclick="adjSet('h',-1)">◀ Time</button><button class="btn btn-outline btn-sm" onclick="adjSet('h',1)">Time ▶</button><button class="btn btn-outline btn-sm" onclick="adjSet('m',-5)">◀ Minutt</button><button class="btn btn-outline btn-sm" onclick="adjSet('m',5)">Minutt ▶</button></div><button class="btn btn-teal" onclick="checkSet()">✅ Sjekk svaret</button><div class="fb" id="fb"></div>`; if(!S.spokenIntro){say(`Still klokken til ${t2no(c.h,c.m)}`); S.spokenIntro=true;} setupDrag();}
+function adjSet(t,d){if(S.answered)return; if(t==='h')S.setH=((S.setH-1+d+12)%12)+1; else S.setM=(S.setM+d+60)%60; updSetClk();}
+function updSetClk(){const c=document.getElementById('iClock'); if(c){c.innerHTML=clockSVG(S.setH,S.setM,{interactive:true,id:'sClk'}); setupDrag();}}
+function setupDrag(){const svg=document.getElementById('sClk'); if(!svg)return; const getA=e=>{const r=svg.getBoundingClientRect(),cxR=r.left+r.width/2,cyR=r.top+r.height*0.525,px=e.touches?e.touches[0].clientX:e.clientX,py=e.touches?e.touches[0].clientY:e.clientY; return Math.atan2(py-cyR,px-cxR)*180/Math.PI+90;}; const onM=e=>{if(!S.dragging||S.answered)return; e.preventDefault(); let a=getA(e); if(a<0)a+=360; if(S.dragging==='minute'){S.setM=Math.round(a/6)%60; S.setM=Math.round(S.setM/5)*5; if(S.setM>=60)S.setM=0;} else {const nh=Math.round(a/30); S.setH=nh===0?12:(nh>12?12:nh);} updSetClk();}; const onE=()=>{S.dragging=null;}; svg.onmousedown=e=>{if(!S.answered){S.dragging='minute'; onM(e);}}; svg.ontouchstart=e=>{if(!S.answered){S.dragging='minute'; onM(e);}}; document.onmousemove=onM; document.ontouchmove=onM; document.onmouseup=onE; document.ontouchend=onE;}
+function checkSet(){if(S.answered)return; S.answered=true; const c=S.answer, ok=S.setH%12===c.h%12&&S.setM===c.m; showFeedback(ok);}
+function renderMatch(){const pc=S.slow?3:4; const pairs=[],used=new Set(); let safe=0; while(pairs.length<pc&&safe<80){const t=rndTime(S.level),k=`${t.h}-${t.m}`; if(!used.has(k)){used.add(k);pairs.push(t);} safe++;} S.matchPairs=pairs; S.matchSel=null; S.matchCount=0; const clks=shuffle(pairs.map((p,i)=>({type:'c',i,h:p.h,m:p.m}))),txts=shuffle(pairs.map((p,i)=>({type:'t',i,h:p.h,m:p.m}))),all=[]; for(let i=0;i<pc;i++)all.push(clks[i],txts[i]); const a=document.getElementById('gameArea'); a.innerHTML=`<div class="instruction">Koble klokke med riktig tid <button class="replay" onclick="say('Koble klokke med riktig tid')">🔊</button></div><div class="pbar"><div class="pfill" style="width:${Math.min((S.round-1)%20,20)/20*100}%"></div></div><div class="mgrid" id="mGrid">${all.map(c=>c.type==='c'?`<button class="mchip" data-type="c" data-i="${c.i}" onclick="mSel(this)">${clockSVG(c.h,c.m,{w:60,mini:true,id:`mm${c.i}c`})}</button>`:`<button class="mchip" data-type="t" data-i="${c.i}" onclick="mSel(this)">${t2no(c.h,c.m)}</button>`).join('')}</div><div class="fb" id="fb"></div>`; if(!S.spokenIntro){say('Koble klokke med riktig tid'); S.spokenIntro=true;}}
+function mSel(card){if(card.classList.contains('hit'))return; const type=card.dataset.type, idx=parseInt(card.dataset.i); if(!S.matchSel){S.matchSel={el:card,type,idx}; card.classList.add('sel'); if(type==='t'){const p=S.matchPairs[idx]; say(t2no(p.h,p.m));}} else {const prev=S.matchSel; if(prev.el===card){card.classList.remove('sel'); S.matchSel=null; return;} if(prev.type===type){prev.el.classList.remove('sel'); S.matchSel={el:card,type,idx}; card.classList.add('sel'); if(type==='t'){const p=S.matchPairs[idx]; say(t2no(p.h,p.m));} return;} if(prev.idx===idx){prev.el.classList.remove('sel'); prev.el.classList.add('hit'); card.classList.add('hit'); S.matchCount++; S.matchSel=null; if(S.matchCount===S.matchPairs.length){S.score += scoreForAnswer()+5; S.streak++; S.combo=Math.min(S.combo+1,10); updateStats(); showFeedback(true,true);} else floatStars(card);} else {card.classList.add('miss'); prev.el.classList.add('miss'); setTimeout(()=>{card.classList.remove('miss'); prev.el.classList.remove('miss','sel');},700); S.matchSel=null;}}}
+
+function checkAns(h,m,btn){if(S.answered)return; S.answered=true; const c=S.answer,ok=(h%12===c.h%12)&&(m===c.m),grid=document.getElementById('aGrid'); if(grid){grid.querySelectorAll('.abtn').forEach(b=>{const bh=parseInt(b.dataset.h),bm=parseInt(b.dataset.m); if(bh%12===c.h%12&&bm===c.m)b.classList.add('correct-answer'); else if(b===btn&&!ok)b.classList.add('wrong-answer'); b.style.pointerEvents='none';});} showFeedback(ok);} 
+async function showFeedback(ok,isMatch=false){const fb=document.getElementById('fb'); if(!fb)return; const def=S.currentUser?AVAILABLE_USERS.find(a=>a.id===S.currentUser.id):null; const rm=def?.emoji||rand(['🦉','🐻','🦊','🐸','🦁']); const okW=['Riktig!','Flott!','Bra jobba!','Kjempebra!','Fantastisk!','Supert!']; const noW=['Nesten!','Prøv igjen!','Neste gang!']; if(ok){const gained=isMatch?0:scoreForAnswer(); if(!isMatch)S.score+=gained; S.streak++; S.combo=Math.min(S.combo+1,10); if(S.streak>S.best)S.best=S.streak; S.sessionScore += isMatch?0:gained; S.sessionAnswered++; if(S.answer&&countWholeHour(S.answer))S.sessionWholeHours++; const w=rand(okW); fb.innerHTML=`<div class="fb-mascot">${rm}</div><div class="fb-text ok">${w}</div><div style="font-size:1rem;color:var(--text2)">+${isMatch?'bonus':gained} poeng • Kombinasjon ${comboLabel()}</div><button class="btn btn-teal" onclick="nextRound()" style="margin-top:6px;">Neste ➡️</button>`; say(def?.mascot||w); correctAnim(fb); if(S.streak>0&&S.streak%5===0)showCeleb();} else {S.streak=0; S.combo=1; const w=rand(noW),c=S.answer; fb.innerHTML=`<div class="fb-mascot">${rm}</div><div class="fb-text no">${w}</div><div style="font-size:1rem;color:var(--text2)">Riktig svar: <strong>${t2no(c.h,c.m)}</strong></div><button class="btn btn-teal" onclick="nextRound()" style="margin-top:6px;">Neste ➡️</button>`; say(w); wrongAnim();}
+  updateStats(); await recordAnswerMetrics(ok); await save();}
+
+function correctAnim(anchor){if(S.simple)return; const rect=anchor.getBoundingClientRect(); for(let i=0;i<5;i++){setTimeout(()=>{const star=document.createElement('div'); star.className='star-float'; star.textContent='⭐'; star.style.left=(rect.left+Math.random()*rect.width)+'px'; star.style.top=rect.top+'px'; document.body.appendChild(star); setTimeout(()=>star.remove(),1300);},i*100);}}
+function floatStars(el){if(S.simple)return; const rect=el.getBoundingClientRect(); for(let i=0;i<3;i++){const star=document.createElement('div'); star.className='star-float'; star.textContent='✨'; star.style.left=(rect.left+Math.random()*rect.width)+'px'; star.style.top=rect.top+'px'; document.body.appendChild(star); setTimeout(()=>star.remove(),1300);}}
+function wrongAnim(){if(S.simple)return; const flash=document.createElement('div'); flash.className='wrong-flash'; document.body.appendChild(flash); setTimeout(()=>flash.remove(),600);} 
+function showCeleb(){if(S.simple)return; const c=document.getElementById('celeb'); document.getElementById('celebE').textContent=rand(['🎉','🌟','💪','🎊','🏆']); document.getElementById('celebT').textContent=rand(['Wow!','Fantastisk!','Kjempebra!','Strålende!']); c.classList.add('on'); makeConfetti(); setTimeout(()=>c.classList.remove('on'),1800);} 
+function makeConfetti(){if(S.simple)return; const cols=['#F26B6B','#F2983A','#F5C842','#6BCF6B','#3DC8C8','#5A9EF2','#8B6BF2','#E06BBF']; for(let i=0;i<30;i++){const p=document.createElement('div'); p.className='confetti'; p.style.background=rand(cols); p.style.width=(6+Math.random()*8)+'px'; p.style.height=(6+Math.random()*8)+'px'; p.style.left=Math.random()*100+'vw'; p.style.top='-12px'; document.body.appendChild(p); const dur=1200+Math.random()*1500,drift=(Math.random()-.5)*200; p.animate([{top:'-12px',opacity:1,transform:'translateX(0) rotate(0deg)'},{top:'105vh',opacity:0,transform:`translateX(${drift}px) rotate(${360+Math.random()*360}deg)`}],{duration:dur,easing:'ease-in'}); setTimeout(()=>p.remove(),dur);}}
+
+function finishSnapshot(){
+  let selfMsg=''; if(S.currentUser){const user=ensureUserDefaults(getUserById(S.currentUser.id)); if(S.best>(user.best||0))selfMsg+=`<div class="self-compete" style="margin-top:8px;">🔥 Du slo din egen rekord! Ny beste rekke: ${S.best}</div>`; if(user.prevSessionScore!==null&&S.sessionScore>user.prevSessionScore)selfMsg+=`<div class="self-compete" style="margin-top:8px;">📈 Bedre enn sist! ${S.sessionScore} vs ${user.prevSessionScore} poeng</div>`; }
+  return `<div class="card" style="width:100%;max-width:560px;"><div class="section-title">📋 Øktsammendrag</div><div class="summary-grid"><div class="summary-chip">⭐ ${S.sessionScore} poeng</div><div class="summary-chip">🔥 Beste rekke ${S.best}</div><div class="summary-chip">📊 ${S.sessionAnswered} riktige</div></div>${selfMsg}</div>`;
+}
+function updateStats(){document.getElementById('sScore').textContent=S.score; document.getElementById('sStreak').textContent=S.streak; document.getElementById('sCombo').textContent=comboLabel(); document.getElementById('sProg').textContent=`${S.round} spørsmål`;}
+function openSettings(){document.getElementById('settingsOverlay').classList.add('on'); document.getElementById('sSimple').className=`toggle ${S.simple?'on':''}`; document.getElementById('sSound').className=`toggle ${S.sound?'on':''}`; document.getElementById('sSlow').className=`toggle ${S.slow?'on':''}`;} function closeSettings(){document.getElementById('settingsOverlay').classList.remove('on');}
+async function toggleSimple(){S.simple=!S.simple; document.body.classList.toggle('simple-mode',S.simple); document.getElementById('simpleToggle').classList.toggle('active',S.simple); document.getElementById('sSimple').className=`toggle ${S.simple?'on':''}`; await save();}
+async function toggleSound(){S.sound=!S.sound; document.getElementById('sSound').className=`toggle ${S.sound?'on':''}`; if(!S.sound)speechSynthesis.cancel(); await save();}
+async function toggleSlow(){S.slow=!S.slow; document.getElementById('sSlow').className=`toggle ${S.slow?'on':''}`; await save();}
+
+async function save(){if(S.currentUser){let user=ensureUserDefaults(getUserById(S.currentUser.id)); user.stars=S.stars; user.unlocked=S.unlocked; user.best=Math.max(user.best||0,S.best); user.simple=S.simple; user.sound=S.sound; user.slow=S.slow; user.lastPlayed=todayKey(); user.score=(user.score||0); user.prevSessionScore=S.sessionScore; unlockBadges(user); await saveUser(user); S.currentUser=user; renderHomeFeatures(); renderSelfCompete();}}
+async function persistScoreDelta(){if(!S.currentUser)return; let user=ensureUserDefaults(getUserById(S.currentUser.id)); user.score += S.sessionScore; user.best=Math.max(user.best||0,S.best); user.prevSessionScore=S.sessionScore; if(S.level<4&&!user.unlocked.includes(S.level+1)&&user.score>=50*S.level)user.unlocked.push(S.level+1); unlockBadges(user); await saveUser(user); S.currentUser=user;}
+window.loadLocalFirst = async function(){
+  const users=getUsers();
+  if(users.length) saveUsers(users.map(ensureUserDefaults));
+};
+window.initAppAfterSync = async function(){
+  const userId=getCurrentUserId();
+  if(userId&&getUserById(userId)){await loginUser(userId); return;}
+  renderUserScreen();
+  showScr('scrUsers');
+};
+window.applyCloudUsers = async function(users){
+  if(Array.isArray(users)) saveUsers(users.map(ensureUserDefaults));
+  const activeUserId=getCurrentUserId();
+  if(activeUserId&&getUserById(activeUserId)){
+    if(!S.currentUser || S.currentUser.id!==activeUserId) await loginUser(activeUserId);
+    else {
+      S.currentUser=ensureUserDefaults(getUserById(activeUserId));
+      renderSelfCompete();
+      renderHomeFeatures();
+      updateStats();
+    }
+  } else {
+    renderUserScreen();
+    if(document.getElementById('scrUsers').classList.contains('on')) showScr('scrUsers');
+  }
+};
+
+(function wrapExit(){const originalExit=exitGame; exitGame=async function(){if(S.sessionScore>0||S.sessionAnswered>0){await persistScoreDelta(); const area=document.getElementById('gameArea'); area.innerHTML=`<div class="welcome"><div style="font-size:4rem">🎉</div><h1>Pause</h1><p>Spillet stopper aldri. Du kan fortsette når du vil.</p>${finishSnapshot()}<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;"><button class="btn btn-teal" onclick="startGame(${S.level})">▶️ Fortsett</button><button class="btn btn-outline" onclick="showScr('scrWelcome');renderHomeFeatures();renderSelfCompete();">🏠 Hjem</button></div></div>`; showScr('scrGame'); S.sessionScore=0; S.sessionAnswered=0; S.sessionWholeHours=0; S.score=0; S.streak=0; S.combo=1; renderHomeFeatures(); renderSelfCompete(); return;} await originalExit();};})();
+
+(async function bootstrapLocal(){
+  try {
+    if (window.showLoading) window.showLoading('Laster lokale data ...');
+    if (window.loadLocalFirst) await window.loadLocalFirst();
+    if (window.initAppAfterSync) await window.initAppAfterSync();
+    drawWelcomeClock();
+  } catch (e) {
+    console.error('Local bootstrap failed:', e);
+    renderUserScreen();
+    showScr('scrUsers');
+  } finally {
+    if (window.hideLoading) window.hideLoading();
+  }
+})();
+
+</script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+  import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB_op73bUiGiBB8nxy2eDiBKwqe5bkGNRs",
+    authDomain: "tiktakavo.firebaseapp.com",
+    projectId: "tiktakavo",
+    storageBucket: "tiktakavo.firebasestorage.app",
+    messagingSenderId: "1052756028389",
+    appId: "1:1052756028389:web:1cf392470bb0c265985d0c"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  window.saveUserToCloud = async function(user) {
+    await setDoc(doc(db, "users", user.id), user);
+  };
+
+  window.deleteAllCloudUsers = async function() {
+    const snapshot = await getDocs(collection(db, "users"));
+    const jobs = [];
+    snapshot.forEach(docSnap => jobs.push(deleteDoc(doc(db, "users", docSnap.id))));
+    await Promise.all(jobs);
+  };
+
+  async function syncCloudToLocal() {
+    try {
+      if (window.setCloudStatus) window.setCloudStatus('Henter siste data fra skyen …', true);
+      const snapshot = await getDocs(collection(db, "users"));
+      const users = [];
+      snapshot.forEach(docSnap => users.push(docSnap.data()));
+      localStorage.setItem('TikTakAVO_users', JSON.stringify(users));
+      if (window.applyCloudUsers) await window.applyCloudUsers(users);
+      if (window.setCloudStatus) window.setCloudStatus('Skydata oppdatert', false);
+      setTimeout(()=>window.setCloudStatus && window.setCloudStatus('Klar', false), 1800);
+    } catch (err) {
+      console.error('Cloud sync failed:', err);
+      if (window.setCloudStatus) window.setCloudStatus('Offline / lokal visning', false);
+    } finally {
+      if (window.hideLoading) window.hideLoading();
+      if (typeof drawWelcomeClock === 'function') drawWelcomeClock();
+    }
+  }
+
+  setTimeout(syncCloudToLocal, 50);
+</script>
+</body>
+</html>
