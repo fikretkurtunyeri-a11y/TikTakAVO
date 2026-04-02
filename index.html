@@ -413,6 +413,21 @@ window.applyCloudUsers = async function(users){
 
 (function wrapExit(){const originalExit=exitGame; exitGame=async function(){if(S.sessionScore>0||S.sessionAnswered>0){await persistScoreDelta(); const area=document.getElementById('gameArea'); area.innerHTML=`<div class="welcome"><div style="font-size:4rem">🎉</div><h1>Pause</h1><p>Spillet stopper aldri. Du kan fortsette når du vil.</p>${finishSnapshot()}<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;"><button class="btn btn-teal" onclick="startGame(${S.level})">▶️ Fortsett</button><button class="btn btn-outline" onclick="showScr('scrWelcome');renderHomeFeatures();renderSelfCompete();">🏠 Hjem</button></div></div>`; showScr('scrGame'); S.sessionScore=0; S.sessionAnswered=0; S.sessionWholeHours=0; S.score=0; S.streak=0; S.combo=1; renderHomeFeatures(); renderSelfCompete(); return;} await originalExit();};})();
 
+(async function bootstrapLocal(){
+  try {
+    if (window.showLoading) window.showLoading('Laster lokale data ...');
+    if (window.loadLocalFirst) await window.loadLocalFirst();
+    if (window.initAppAfterSync) await window.initAppAfterSync();
+    drawWelcomeClock();
+  } catch (e) {
+    console.error('Local bootstrap failed:', e);
+    renderUserScreen();
+    showScr('scrUsers');
+  } finally {
+    if (window.hideLoading) window.hideLoading();
+  }
+})();
+
 </script>
 
 <script type="module">
@@ -455,6 +470,9 @@ window.applyCloudUsers = async function(users){
     } catch (err) {
       console.error('Cloud sync failed:', err);
       if (window.setCloudStatus) window.setCloudStatus('Offline / lokal visning', false);
+    } finally {
+      if (window.hideLoading) window.hideLoading();
+      if (typeof drawWelcomeClock === 'function') drawWelcomeClock();
     }
   }
 
