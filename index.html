@@ -91,18 +91,6 @@ body.simple-mode .abtn.correct-answer,body.simple-mode .abtn.wrong-answer{animat
 @keyframes celebBounce{0%{transform:scale(.3) rotate(-10deg);opacity:0}50%{transform:scale(1.15) rotate(3deg);opacity:1}70%{transform:scale(.95) rotate(-1deg)}100%{transform:scale(1) rotate(0deg);opacity:1}}
 .confetti{position:fixed;pointer-events:none;z-index:999;border-radius:3px;} .star-float{position:fixed;pointer-events:none;z-index:998;font-size:1.6rem;animation:starRise 1.2s ease-out forwards;} body.simple-mode .confetti,body.simple-mode .star-float{display:none!important;} @keyframes starRise{0%{opacity:1;transform:translateY(0) scale(.5)}100%{opacity:0;transform:translateY(-120px) scale(1.3)}} .wrong-flash{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(232,93,93,.08);z-index:997;pointer-events:none;animation:flashFade .5s ease forwards;} @keyframes flashFade{0%{opacity:1}100%{opacity:0}}
 .user-welcome-bar{display:flex;align-items:center;gap:8px;padding:6px 14px;background:var(--tealLight);border-radius:var(--r-sm);font-size:.9rem;font-weight:600;color:var(--teal);} .summary-grid{display:grid;gap:10px;width:100%;max-width:500px;} .self-compete{background:var(--goldLight);border:2px solid var(--gold);border-radius:var(--r-md);padding:12px 16px;text-align:center;font-weight:700;color:var(--text);font-size:1rem;animation:correctPop .5s ease;}
-
-.loading-screen{position:fixed;inset:0;z-index:1200;background:linear-gradient(180deg,var(--bg),var(--bg2));display:flex;align-items:center;justify-content:center;transition:opacity .25s ease,visibility .25s ease;}
-.loading-screen.hidden{opacity:0;visibility:hidden;pointer-events:none;}
-.loading-card{background:var(--card);border:2px solid var(--border);border-radius:var(--r-xl);box-shadow:var(--shadow3);padding:26px 22px;min-width:260px;max-width:360px;text-align:center;}
-.loading-emoji{font-size:3rem;line-height:1;margin-bottom:8px;}
-.loading-title{font-size:1.35rem;font-weight:800;color:var(--text);margin-bottom:6px;}
-.loading-sub{font-size:.95rem;color:var(--text2);}
-.loading-spinner{width:34px;height:34px;border-radius:50%;border:4px solid var(--tealLight);border-top-color:var(--teal);margin:14px auto 0;animation:spin 1s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg)}}
-.cloud-pill{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;border:2px solid var(--border);background:var(--card);font-size:.85rem;font-weight:700;color:var(--text2);box-shadow:var(--shadow1);}
-.cloud-pill.syncing{border-color:var(--teal);background:var(--tealLight);color:var(--teal);}
-
 @media(max-width:700px){.podium{grid-template-columns:1fr;}.podium-item.rank1,.podium-item.rank2,.podium-item.rank3{min-height:auto;} .top-btns{width:100%;justify-content:center;}.topbar{justify-content:center;} }
 @media(max-width:480px){html{font-size:16px;}.clock-wrap{width:min(260px,75vw);height:min(286px,83vw);} .welcome h1,.user-screen h1{font-size:1.65rem;} .user-grid,.lvl-grid{grid-template-columns:1fr 1fr;} .home-btn{top:8px;left:8px;padding:6px 10px;font-size:.78rem;} }
 </style>
@@ -135,7 +123,6 @@ body.simple-mode .abtn.correct-answer,body.simple-mode .abtn.wrong-answer{animat
       <h1>Lær å lese klokken!</h1>
       <p>Velg en aktivitet for å starte. Samle poeng, fullfør oppdrag og slå din egen rekord.</p>
       <div id="selfCompeteArea" style="width:100%;max-width:620px;"></div>
-      <div id="cloudStatusArea" style="width:100%;max-width:620px;"></div>
       <div id="homeFeatureArea" class="feature-grid"></div>
       <div class="mode-grid">
         <button class="mcard" onclick="pickMode('read')"><span class="mcard-ico">👀</span><div><div class="mcard-t">Les klokka</div><div class="mcard-d">Se klokken – velg riktig tid</div></div></button>
@@ -173,16 +160,6 @@ body.simple-mode .abtn.correct-answer,body.simple-mode .abtn.wrong-answer{animat
 </div>
 
 <div class="celeb" id="celeb"><div class="celeb-inner"><div style="font-size:4rem" id="celebE">🎉</div><div style="font-size:1.5rem;font-weight:800;margin-top:6px" id="celebT">Flott!</div></div></div>
-
-<div class="loading-screen" id="loadingScreen">
-  <div class="loading-card">
-    <div class="loading-emoji">🕐</div>
-    <div class="loading-title">TikTakAVO lastes</div>
-    <div class="loading-sub" id="loadingSub">Henter siste poeng og brukere…</div>
-    <div class="loading-spinner"></div>
-  </div>
-</div>
-
 
 <script>
 const AVAILABLE_USERS=[
@@ -226,17 +203,13 @@ function getUsers(){try{return JSON.parse(localStorage.getItem('TikTakAVO_users'
 function saveUsers(users){localStorage.setItem('TikTakAVO_users',JSON.stringify(users));}
 function getCurrentUserId(){return localStorage.getItem('TikTakAVO_currentUser')||null;}
 function setCurrentUserId(id){localStorage.setItem('TikTakAVO_currentUser',id);} function clearCurrentUser(){localStorage.removeItem('TikTakAVO_currentUser');}
-function getUserById(id){return getUsers().find(u=>u.id===id)||null;} async function saveUser(user){const users=getUsers();const idx=users.findIndex(u=>u.id===user.id); if(idx>=0)users[idx]=user; else users.push(user); saveUsers(users); if(window.saveUserToCloud){window.saveUserToCloud(user).catch(e=>console.error('Cloud save failed',e));}}
+function getUserById(id){return getUsers().find(u=>u.id===id)||null;} function saveUser(user){const users=getUsers();const idx=users.findIndex(u=>u.id===user.id); if(idx>=0)users[idx]=user; else users.push(user); saveUsers(users);}
 function generatePin(){return String(Math.floor(1000+Math.random()*9000));}
 function todayKey(){return new Date().toISOString().split('T')[0];}
 function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
 function rand(a){return a[Math.floor(Math.random()*a.length)];}
 const S={mode:null,level:1,score:0,streak:0,best:0,combo:1,round:0,total:null,answer:null,simple:false,sound:true,slow:false,stars:{1:0,2:0,3:0,4:0},unlocked:[1],answered:false,setH:12,setM:0,dragging:null,matchPairs:[],matchSel:null,matchCount:0,spokenIntro:false,currentUser:null,sessionScore:0,prevSessionScore:null,sessionAnswered:0,sessionWholeHours:0};
-
 let pinBuffer='',pinTarget='',pinHelpStep=0;
-window.showLoading=function(msg){const el=document.getElementById('loadingScreen');const sub=document.getElementById('loadingSub'); if(sub&&msg)sub.textContent=msg; if(el)el.classList.remove('hidden');};
-window.hideLoading=function(){const el=document.getElementById('loadingScreen'); if(el)el.classList.add('hidden');};
-function setCloudStatus(text,isSyncing=false){const area=document.getElementById('cloudStatusArea'); if(!area)return; area.innerHTML=`<div class="cloud-pill ${isSyncing?'syncing':''}">☁️ ${text}</div>`;} window.setCloudStatus=setCloudStatus;
 
 function ensureUserDefaults(u){
   u.score=u.score||0; u.best=u.best||0; u.level=u.level||1; u.stars=u.stars||{1:0,2:0,3:0,4:0}; u.unlocked=u.unlocked||[1];
@@ -274,10 +247,10 @@ function renderUserScreen(){
   document.getElementById('userScreen').innerHTML=html;
 }
 
-async function createUser(id){
+function createUser(id){
   const pin=generatePin(), def=AVAILABLE_USERS.find(a=>a.id===id);
   const user=ensureUserDefaults({id,pin,score:0,best:0,level:1,stars:{1:0,2:0,3:0,4:0},unlocked:[1],lastPlayed:todayKey(),simple:false,sound:true,slow:false,prevSessionScore:null,totalAnswered:0,badges:[],theme:'classic'});
-  await saveUser(user);
+  saveUser(user);
   document.getElementById('pinScreen').innerHTML=`<div class="pin-reveal"><div style="font-size:3.5rem;">${def.emoji}</div><div style="font-size:1.3rem;font-weight:700;margin:8px 0;">Hei, ${def.name}!</div><div style="font-size:1.1rem;color:var(--text2);font-weight:600;">Din kode:</div><div class="big-pin">${pin}</div><div style="font-size:1rem;color:var(--red);font-weight:700;margin-top:6px;">Husk denne koden!</div><button class="btn btn-teal" style="margin-top:18px;width:100%;" onclick="loginUser('${id}')">Jeg har husket den! ✅</button></div>`;
   showScr('scrPin');
 }
@@ -299,13 +272,13 @@ function showCodeHelp(){
 function answerCodeHelp(i){const def=AVAILABLE_USERS.find(a=>a.id===pinTarget); if(i===def.correct) revealPinHelp(); else showCodeHelp();}
 function revealPinHelp(){const user=getUserById(pinTarget), def=AVAILABLE_USERS.find(a=>a.id===pinTarget); document.getElementById('pinScreen').innerHTML=`<div class="pin-reveal"><div style="font-size:3rem;">${def.emoji}</div><div style="font-size:1.2rem;font-weight:700;">Her kommer koden din</div><div class="big-pin">${user.pin}</div><div style="font-size:1rem;color:var(--text2);">Nå kan du logge inn igjen.</div><button class="btn btn-teal" style="width:100%;margin-top:14px;" onclick="renderPinScreen('${pinTarget}',false)">Tilbake til kode</button></div>`;}
 
-async function loginUser(id){
+function loginUser(id){
   let user=getUserById(id); if(!user)return; user=ensureUserDefaults(user); setCurrentUserId(id); S.currentUser=user; S.stars=user.stars; S.unlocked=user.unlocked; S.best=user.best; S.simple=user.simple; S.sound=user.sound; S.slow=user.slow; S.prevSessionScore=user.prevSessionScore; S.sessionScore=0; S.sessionAnswered=0; S.sessionWholeHours=0; S.score=0; S.streak=0; S.combo=1;
   document.body.classList.toggle('simple-mode',S.simple); document.getElementById('simpleToggle').classList.toggle('active',S.simple); applyThemeFromUser(user);
   const def=AVAILABLE_USERS.find(a=>a.id===id)||{emoji:'👤',name:id}; document.getElementById('userWelcomeBar').innerHTML=`<button class="tbtn" onclick="logoutUser()" title="Bytt bruker">${def.emoji} ${def.name} ↺</button>`;
-  user.lastPlayed=todayKey(); await saveUser(user); renderSelfCompete(); renderHomeFeatures(); showScr('scrWelcome'); drawWelcomeClock();
+  user.lastPlayed=todayKey(); saveUser(user); renderSelfCompete(); renderHomeFeatures(); showScr('scrWelcome'); drawWelcomeClock();
 }
-async function logoutUser(){if(S.currentUser){const user=getUserById(S.currentUser.id); if(user){user.prevSessionScore=S.sessionScore; await saveUser(user);}} speechSynthesis.cancel(); S.currentUser=null; clearCurrentUser(); document.getElementById('userWelcomeBar').innerHTML=''; document.getElementById('selfCompeteArea').innerHTML=''; document.getElementById('homeFeatureArea').innerHTML=''; const csa=document.getElementById('cloudStatusArea'); if(csa)csa.innerHTML=''; renderUserScreen(); showScr('scrUsers');}
+function logoutUser(){if(S.currentUser){const user=getUserById(S.currentUser.id); if(user){user.prevSessionScore=S.sessionScore; saveUser(user);}} speechSynthesis.cancel(); S.currentUser=null; clearCurrentUser(); document.getElementById('userWelcomeBar').innerHTML=''; document.getElementById('selfCompeteArea').innerHTML=''; document.getElementById('homeFeatureArea').innerHTML=''; renderUserScreen(); showScr('scrUsers');}
 
 function renderSelfCompete(){
   const area=document.getElementById('selfCompeteArea'); if(!S.currentUser){area.innerHTML=''; return;} const user=ensureUserDefaults(getUserById(S.currentUser.id));
@@ -319,10 +292,10 @@ function renderHomeFeatures(){
   const themes=availableThemes(user).map(t=>`<button class="theme-chip ${t.open?'unlocked':'locked'}" ${t.open?`onclick="selectTheme('${t.id}')"`:''}>${t.label}</button>`).join('');
   area.innerHTML=`<div class="card"><div class="section-title">📅 Dagens mini-oppdrag</div><div class="mission-row">${missions}</div></div><div class="card"><div class="section-title">🏅 Rosetter</div><div class="badges-row">${badges}</div></div><div class="card"><div class="section-title">🎨 Tema-belønninger</div><div class="theme-row">${themes}</div></div>`;
 }
-async function selectTheme(id){if(!S.currentUser)return; const user=ensureUserDefaults(getUserById(S.currentUser.id)); const t=THEMES.find(x=>x.id===id); if(!t||!t.unlock(user))return; user.theme=id; await saveUser(user); applyThemeFromUser(user); drawWelcomeClock(); renderHomeFeatures();}
+function selectTheme(id){if(!S.currentUser)return; const user=ensureUserDefaults(getUserById(S.currentUser.id)); const t=THEMES.find(x=>x.id===id); if(!t||!t.unlock(user))return; user.theme=id; saveUser(user); applyThemeFromUser(user); drawWelcomeClock(); renderHomeFeatures();}
 
-async function resetCurrentUser(){if(!S.currentUser)return; if(confirm('Nullstille all fremgang for denne brukeren?')){const def=AVAILABLE_USERS.find(a=>a.id===S.currentUser.id); const user=ensureUserDefaults({id:S.currentUser.id,pin:getUserById(S.currentUser.id).pin,score:0,best:0,level:1,stars:{1:0,2:0,3:0,4:0},unlocked:[1],lastPlayed:todayKey(),simple:S.simple,sound:S.sound,slow:S.slow,prevSessionScore:null,totalAnswered:0,badges:[],theme:'classic'}); await saveUser(user); closeSettings(); await loginUser(user.id);}}
-async function resetAllUsers(){if(confirm('Slette ALLE brukere og all fremgang?')){localStorage.removeItem('TikTakAVO_users'); localStorage.removeItem('TikTakAVO_currentUser'); if(window.deleteAllCloudUsers){try{await window.deleteAllCloudUsers();}catch(e){console.error(e);}} location.reload();}}
+function resetCurrentUser(){if(!S.currentUser)return; if(confirm('Nullstille all fremgang for denne brukeren?')){const def=AVAILABLE_USERS.find(a=>a.id===S.currentUser.id); const user=ensureUserDefaults({id:S.currentUser.id,pin:getUserById(S.currentUser.id).pin,score:0,best:0,level:1,stars:{1:0,2:0,3:0,4:0},unlocked:[1],lastPlayed:todayKey(),simple:S.simple,sound:S.sound,slow:S.slow,prevSessionScore:null,totalAnswered:0,badges:[],theme:'classic'}); saveUser(user); closeSettings(); loginUser(user.id);}}
+function resetAllUsers(){if(confirm('Slette ALLE brukere og all fremgang?')){localStorage.removeItem('TikTakAVO_users'); localStorage.removeItem('TikTakAVO_currentUser'); location.reload();}}
 
 const HN=['tolv','ett','to','tre','fire','fem','seks','syv','åtte','ni','ti','elleve','tolv'];
 function t2no(h,m){const h12=h%12,nx=(h12+1)%12; if(m===0)return `klokken ${HN[h12]}`; if(m===30)return `halv ${HN[nx]}`; if(m===15)return `kvart over ${HN[h12]}`; if(m===45)return `kvart på ${HN[nx]}`; if(m===5)return `fem over ${HN[h12]}`; if(m===10)return `ti over ${HN[h12]}`; if(m===20)return `ti på halv ${HN[nx]}`; if(m===25)return `fem på halv ${HN[nx]}`; if(m===35)return `fem over halv ${HN[nx]}`; if(m===40)return `ti over halv ${HN[nx]}`; if(m===50)return `ti på ${HN[nx]}`; if(m===55)return `fem på ${HN[nx]}`; return digi(h,m);} function digi(h,m){return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;}
@@ -349,7 +322,7 @@ function maybeContextPrompt(){if(S.level>=2 && Math.random()<0.22) return rand(C
 function scoreForAnswer(){return 10 + Math.max(0,(S.combo-1)*2);} 
 function comboLabel(){return `x${S.combo}`;}
 function countWholeHour(t){return t.m===0;}
-async function recordAnswerMetrics(correct){if(!S.currentUser)return; let user=ensureUserDefaults(getUserById(S.currentUser.id)); user.totalAnswered+=1; user.dayStats.answered+=1; updateDailyMission(user,'play10',user.dayStats.answered); if(correct&&S.answer&&countWholeHour(S.answer)){user.dayStats.whole+=1; updateDailyMission(user,'whole3',user.dayStats.whole);} if(correct){user.dayStats.bestStreak=Math.max(user.dayStats.bestStreak,S.streak); updateDailyMission(user,'streak5',user.dayStats.bestStreak);} unlockBadges(user); await saveUser(user);}
+function recordAnswerMetrics(correct){if(!S.currentUser)return; let user=ensureUserDefaults(getUserById(S.currentUser.id)); user.totalAnswered+=1; user.dayStats.answered+=1; updateDailyMission(user,'play10',user.dayStats.answered); if(correct&&S.answer&&countWholeHour(S.answer)){user.dayStats.whole+=1; updateDailyMission(user,'whole3',user.dayStats.whole);} if(correct){user.dayStats.bestStreak=Math.max(user.dayStats.bestStreak,S.streak); updateDailyMission(user,'streak5',user.dayStats.bestStreak);} unlockBadges(user); saveUser(user);}
 
 function renderRead(){const ctxPrompt=maybeContextPrompt(); const c=ctxPrompt?rand(ctxPrompt.times):rndTime(S.level); S.answer=c; const n=optCount(),wrongs=genWrongs(c,S.level,n-1),opts=shuffle([c,...wrongs]),cls=n<=2?'c1':'c2',a=document.getElementById('gameArea'); const question=ctxPrompt?ctxPrompt.text:'Hva er klokken?'; a.innerHTML=`<div class="instruction">${question}<button class="replay" onclick="say('${question.replace(/'/g,"\\'")}')">🔊</button></div><div class="pbar"><div class="pfill" style="width:${Math.min((S.round-1)%20,20)/20*100}%"></div></div><div class="clock-wrap">${clockSVG(c.h,c.m)}</div><div class="agrid ${cls}" id="aGrid">${opts.map(o=>`<button class="abtn" onclick="checkAns(${o.h},${o.m},this)" data-h="${o.h}" data-m="${o.m}">${t2no(o.h,o.m)} <span class="spk" onclick="event.stopPropagation();say('${t2no(o.h,o.m).replace(/'/g,"\\'")}')">🔊</span></button>`).join('')}</div><div class="fb" id="fb"></div>`; if(!S.spokenIntro){say(question);S.spokenIntro=true;}}
 function renderListen(){const c=rndTime(S.level); S.answer=c; const n=optCount(),wrongs=genWrongs(c,S.level,n-1),opts=shuffle([c,...wrongs]),cls=n<=2?'c2':'c3',a=document.getElementById('gameArea'); a.innerHTML=`<div class="instruction">Lytt – velg riktig klokke <button class="replay" onclick="sayTime()">🔊</button></div><div class="pbar"><div class="pfill" style="width:${Math.min((S.round-1)%20,20)/20*100}%"></div></div><div class="agrid ${cls}" id="aGrid" style="max-width:500px;">${opts.map(o=>`<button class="abtn" onclick="checkAns(${o.h},${o.m},this)" data-h="${o.h}" data-m="${o.m}" style="flex-direction:column;padding:10px;">${clockSVG(o.h,o.m,{w:60,mini:true,id:`mc${o.h}_${o.m}`})}<span style="font-size:.95rem;margin-top:4px;">${digi(o.h,o.m)}</span></button>`).join('')}</div><div class="fb" id="fb"></div>`; if(!S.spokenIntro){say('Lytt, og velg riktig klokke.',()=>setTimeout(()=>sayTime(),300)); S.spokenIntro=true;} else setTimeout(()=>sayTime(),150);}
@@ -363,8 +336,8 @@ function renderMatch(){const pc=S.slow?3:4; const pairs=[],used=new Set(); let s
 function mSel(card){if(card.classList.contains('hit'))return; const type=card.dataset.type, idx=parseInt(card.dataset.i); if(!S.matchSel){S.matchSel={el:card,type,idx}; card.classList.add('sel'); if(type==='t'){const p=S.matchPairs[idx]; say(t2no(p.h,p.m));}} else {const prev=S.matchSel; if(prev.el===card){card.classList.remove('sel'); S.matchSel=null; return;} if(prev.type===type){prev.el.classList.remove('sel'); S.matchSel={el:card,type,idx}; card.classList.add('sel'); if(type==='t'){const p=S.matchPairs[idx]; say(t2no(p.h,p.m));} return;} if(prev.idx===idx){prev.el.classList.remove('sel'); prev.el.classList.add('hit'); card.classList.add('hit'); S.matchCount++; S.matchSel=null; if(S.matchCount===S.matchPairs.length){S.score += scoreForAnswer()+5; S.streak++; S.combo=Math.min(S.combo+1,10); updateStats(); showFeedback(true,true);} else floatStars(card);} else {card.classList.add('miss'); prev.el.classList.add('miss'); setTimeout(()=>{card.classList.remove('miss'); prev.el.classList.remove('miss','sel');},700); S.matchSel=null;}}}
 
 function checkAns(h,m,btn){if(S.answered)return; S.answered=true; const c=S.answer,ok=(h%12===c.h%12)&&(m===c.m),grid=document.getElementById('aGrid'); if(grid){grid.querySelectorAll('.abtn').forEach(b=>{const bh=parseInt(b.dataset.h),bm=parseInt(b.dataset.m); if(bh%12===c.h%12&&bm===c.m)b.classList.add('correct-answer'); else if(b===btn&&!ok)b.classList.add('wrong-answer'); b.style.pointerEvents='none';});} showFeedback(ok);} 
-async function showFeedback(ok,isMatch=false){const fb=document.getElementById('fb'); if(!fb)return; const def=S.currentUser?AVAILABLE_USERS.find(a=>a.id===S.currentUser.id):null; const rm=def?.emoji||rand(['🦉','🐻','🦊','🐸','🦁']); const okW=['Riktig!','Flott!','Bra jobba!','Kjempebra!','Fantastisk!','Supert!']; const noW=['Nesten!','Prøv igjen!','Neste gang!']; if(ok){const gained=isMatch?0:scoreForAnswer(); if(!isMatch)S.score+=gained; S.streak++; S.combo=Math.min(S.combo+1,10); if(S.streak>S.best)S.best=S.streak; S.sessionScore += isMatch?0:gained; S.sessionAnswered++; if(S.answer&&countWholeHour(S.answer))S.sessionWholeHours++; const w=rand(okW); fb.innerHTML=`<div class="fb-mascot">${rm}</div><div class="fb-text ok">${w}</div><div style="font-size:1rem;color:var(--text2)">+${isMatch?'bonus':gained} poeng • Kombinasjon ${comboLabel()}</div><button class="btn btn-teal" onclick="nextRound()" style="margin-top:6px;">Neste ➡️</button>`; say(def?.mascot||w); correctAnim(fb); if(S.streak>0&&S.streak%5===0)showCeleb();} else {S.streak=0; S.combo=1; const w=rand(noW),c=S.answer; fb.innerHTML=`<div class="fb-mascot">${rm}</div><div class="fb-text no">${w}</div><div style="font-size:1rem;color:var(--text2)">Riktig svar: <strong>${t2no(c.h,c.m)}</strong></div><button class="btn btn-teal" onclick="nextRound()" style="margin-top:6px;">Neste ➡️</button>`; say(w); wrongAnim();}
-  updateStats(); await recordAnswerMetrics(ok); await save();}
+function showFeedback(ok,isMatch=false){const fb=document.getElementById('fb'); if(!fb)return; const def=S.currentUser?AVAILABLE_USERS.find(a=>a.id===S.currentUser.id):null; const rm=def?.emoji||rand(['🦉','🐻','🦊','🐸','🦁']); const okW=['Riktig!','Flott!','Bra jobba!','Kjempebra!','Fantastisk!','Supert!']; const noW=['Nesten!','Prøv igjen!','Neste gang!']; if(ok){const gained=isMatch?0:scoreForAnswer(); if(!isMatch)S.score+=gained; S.streak++; S.combo=Math.min(S.combo+1,10); if(S.streak>S.best)S.best=S.streak; S.sessionScore += isMatch?0:gained; S.sessionAnswered++; if(S.answer&&countWholeHour(S.answer))S.sessionWholeHours++; const w=rand(okW); fb.innerHTML=`<div class="fb-mascot">${rm}</div><div class="fb-text ok">${w}</div><div style="font-size:1rem;color:var(--text2)">+${isMatch?'bonus':gained} poeng • Kombinasjon ${comboLabel()}</div><button class="btn btn-teal" onclick="nextRound()" style="margin-top:6px;">Neste ➡️</button>`; say(def?.mascot||w); correctAnim(fb); if(S.streak>0&&S.streak%5===0)showCeleb();} else {S.streak=0; S.combo=1; const w=rand(noW),c=S.answer; fb.innerHTML=`<div class="fb-mascot">${rm}</div><div class="fb-text no">${w}</div><div style="font-size:1rem;color:var(--text2)">Riktig svar: <strong>${t2no(c.h,c.m)}</strong></div><button class="btn btn-teal" onclick="nextRound()" style="margin-top:6px;">Neste ➡️</button>`; say(w); wrongAnim();}
+  updateStats(); recordAnswerMetrics(ok); save();}
 
 function correctAnim(anchor){if(S.simple)return; const rect=anchor.getBoundingClientRect(); for(let i=0;i<5;i++){setTimeout(()=>{const star=document.createElement('div'); star.className='star-float'; star.textContent='⭐'; star.style.left=(rect.left+Math.random()*rect.width)+'px'; star.style.top=rect.top+'px'; document.body.appendChild(star); setTimeout(()=>star.remove(),1300);},i*100);}}
 function floatStars(el){if(S.simple)return; const rect=el.getBoundingClientRect(); for(let i=0;i<3;i++){const star=document.createElement('div'); star.className='star-float'; star.textContent='✨'; star.style.left=(rect.left+Math.random()*rect.width)+'px'; star.style.top=rect.top+'px'; document.body.appendChild(star); setTimeout(()=>star.remove(),1300);}}
@@ -378,61 +351,29 @@ function finishSnapshot(){
 }
 function updateStats(){document.getElementById('sScore').textContent=S.score; document.getElementById('sStreak').textContent=S.streak; document.getElementById('sCombo').textContent=comboLabel(); document.getElementById('sProg').textContent=`${S.round} spørsmål`;}
 function openSettings(){document.getElementById('settingsOverlay').classList.add('on'); document.getElementById('sSimple').className=`toggle ${S.simple?'on':''}`; document.getElementById('sSound').className=`toggle ${S.sound?'on':''}`; document.getElementById('sSlow').className=`toggle ${S.slow?'on':''}`;} function closeSettings(){document.getElementById('settingsOverlay').classList.remove('on');}
-async function toggleSimple(){S.simple=!S.simple; document.body.classList.toggle('simple-mode',S.simple); document.getElementById('simpleToggle').classList.toggle('active',S.simple); document.getElementById('sSimple').className=`toggle ${S.simple?'on':''}`; await save();}
-async function toggleSound(){S.sound=!S.sound; document.getElementById('sSound').className=`toggle ${S.sound?'on':''}`; if(!S.sound)speechSynthesis.cancel(); await save();}
-async function toggleSlow(){S.slow=!S.slow; document.getElementById('sSlow').className=`toggle ${S.slow?'on':''}`; await save();}
+function toggleSimple(){S.simple=!S.simple; document.body.classList.toggle('simple-mode',S.simple); document.getElementById('simpleToggle').classList.toggle('active',S.simple); document.getElementById('sSimple').className=`toggle ${S.simple?'on':''}`; save();}
+function toggleSound(){S.sound=!S.sound; document.getElementById('sSound').className=`toggle ${S.sound?'on':''}`; if(!S.sound)speechSynthesis.cancel(); save();}
+function toggleSlow(){S.slow=!S.slow; document.getElementById('sSlow').className=`toggle ${S.slow?'on':''}`; save();}
 
-async function save(){if(S.currentUser){let user=ensureUserDefaults(getUserById(S.currentUser.id)); user.stars=S.stars; user.unlocked=S.unlocked; user.best=Math.max(user.best||0,S.best); user.simple=S.simple; user.sound=S.sound; user.slow=S.slow; user.lastPlayed=todayKey(); user.score=(user.score||0); user.prevSessionScore=S.sessionScore; unlockBadges(user); await saveUser(user); S.currentUser=user; renderHomeFeatures(); renderSelfCompete();}}
-async function persistScoreDelta(){if(!S.currentUser)return; let user=ensureUserDefaults(getUserById(S.currentUser.id)); user.score += S.sessionScore; user.best=Math.max(user.best||0,S.best); user.prevSessionScore=S.sessionScore; if(S.level<4&&!user.unlocked.includes(S.level+1)&&user.score>=50*S.level)user.unlocked.push(S.level+1); unlockBadges(user); await saveUser(user); S.currentUser=user;}
-window.loadLocalFirst = async function(){
-  const users=getUsers();
-  if(users.length) saveUsers(users.map(ensureUserDefaults));
-};
-window.initAppAfterSync = async function(){
-  const userId=getCurrentUserId();
-  if(userId&&getUserById(userId)){await loginUser(userId); return;}
-  renderUserScreen();
-  showScr('scrUsers');
-};
-window.applyCloudUsers = async function(users){
-  if(Array.isArray(users)) saveUsers(users.map(ensureUserDefaults));
-  const activeUserId=getCurrentUserId();
-  if(activeUserId&&getUserById(activeUserId)){
-    if(!S.currentUser || S.currentUser.id!==activeUserId) await loginUser(activeUserId);
-    else {
-      S.currentUser=ensureUserDefaults(getUserById(activeUserId));
-      renderSelfCompete();
-      renderHomeFeatures();
-      updateStats();
-    }
-  } else {
-    renderUserScreen();
-    if(document.getElementById('scrUsers').classList.contains('on')) showScr('scrUsers');
-  }
-};
+function save(){if(S.currentUser){let user=ensureUserDefaults(getUserById(S.currentUser.id)); user.stars=S.stars; user.unlocked=S.unlocked; user.best=Math.max(user.best||0,S.best); user.simple=S.simple; user.sound=S.sound; user.slow=S.slow; user.lastPlayed=todayKey(); user.score=(user.score||0); user.prevSessionScore=S.sessionScore; unlockBadges(user); saveUser(user); S.currentUser=user; renderHomeFeatures(); renderSelfCompete();}}
+function persistScoreDelta(){if(!S.currentUser)return; let user=ensureUserDefaults(getUserById(S.currentUser.id)); user.score += S.sessionScore; user.best=Math.max(user.best||0,S.best); user.prevSessionScore=S.sessionScore; if(S.level<4&&!user.unlocked.includes(S.level+1)&&user.score>=50*S.level)user.unlocked.push(S.level+1); unlockBadges(user); saveUser(user); S.currentUser=user;}
+function load(){const users=getUsers(); if(users.length)saveUsers(users.map(ensureUserDefaults)); const userId=getCurrentUserId(); if(userId&&getUserById(userId)){loginUser(userId); return;} renderUserScreen(); showScr('scrUsers');}
 
-(function wrapExit(){const originalExit=exitGame; exitGame=async function(){if(S.sessionScore>0||S.sessionAnswered>0){await persistScoreDelta(); const area=document.getElementById('gameArea'); area.innerHTML=`<div class="welcome"><div style="font-size:4rem">🎉</div><h1>Pause</h1><p>Spillet stopper aldri. Du kan fortsette når du vil.</p>${finishSnapshot()}<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;"><button class="btn btn-teal" onclick="startGame(${S.level})">▶️ Fortsett</button><button class="btn btn-outline" onclick="showScr('scrWelcome');renderHomeFeatures();renderSelfCompete();">🏠 Hjem</button></div></div>`; showScr('scrGame'); S.sessionScore=0; S.sessionAnswered=0; S.sessionWholeHours=0; S.score=0; S.streak=0; S.combo=1; renderHomeFeatures(); renderSelfCompete(); return;} await originalExit();};})();
+(function wrapExit(){const originalExit=exitGame; exitGame=function(){if(S.sessionScore>0||S.sessionAnswered>0){persistScoreDelta(); const area=document.getElementById('gameArea'); area.innerHTML=`<div class="welcome"><div style="font-size:4rem">🎉</div><h1>Pause</h1><p>Spillet stopper aldri. Du kan fortsette når du vil.</p>${finishSnapshot()}<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;"><button class="btn btn-teal" onclick="startGame(${S.level})">▶️ Fortsett</button><button class="btn btn-outline" onclick="showScr('scrWelcome');renderHomeFeatures();renderSelfCompete();">🏠 Hjem</button></div></div>`; showScr('scrGame'); S.sessionScore=0; S.sessionAnswered=0; S.sessionWholeHours=0; S.score=0; S.streak=0; S.combo=1; renderHomeFeatures(); renderSelfCompete(); return;} originalExit();};})();
 
-(async function bootstrapLocal(){
-  try {
-    if (window.showLoading) window.showLoading('Laster lokale data ...');
-    if (window.loadLocalFirst) await window.loadLocalFirst();
-    if (window.initAppAfterSync) await window.initAppAfterSync();
-    drawWelcomeClock();
-  } catch (e) {
-    console.error('Local bootstrap failed:', e);
-    renderUserScreen();
-    showScr('scrUsers');
-  } finally {
-    if (window.hideLoading) window.hideLoading();
-  }
-})();
-
+load(); drawWelcomeClock();
 </script>
-
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-  import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+  import {
+    getFirestore,
+    collection,
+    getDocs,
+    addDoc,
+    doc,
+    setDoc,
+    updateDoc
+  } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyB_op73bUiGiBB8nxy2eDiBKwqe5bkGNRs",
@@ -446,37 +387,16 @@ window.applyCloudUsers = async function(users){
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  window.saveUserToCloud = async function(user) {
-    await setDoc(doc(db, "users", user.id), user);
+  // GLOBAL erişim için
+  window.db = db;
+  window.fb = {
+    collection,
+    getDocs,
+    addDoc,
+    doc,
+    setDoc,
+    updateDoc
   };
-
-  window.deleteAllCloudUsers = async function() {
-    const snapshot = await getDocs(collection(db, "users"));
-    const jobs = [];
-    snapshot.forEach(docSnap => jobs.push(deleteDoc(doc(db, "users", docSnap.id))));
-    await Promise.all(jobs);
-  };
-
-  async function syncCloudToLocal() {
-    try {
-      if (window.setCloudStatus) window.setCloudStatus('Henter siste data fra skyen …', true);
-      const snapshot = await getDocs(collection(db, "users"));
-      const users = [];
-      snapshot.forEach(docSnap => users.push(docSnap.data()));
-      localStorage.setItem('TikTakAVO_users', JSON.stringify(users));
-      if (window.applyCloudUsers) await window.applyCloudUsers(users);
-      if (window.setCloudStatus) window.setCloudStatus('Skydata oppdatert', false);
-      setTimeout(()=>window.setCloudStatus && window.setCloudStatus('Klar', false), 1800);
-    } catch (err) {
-      console.error('Cloud sync failed:', err);
-      if (window.setCloudStatus) window.setCloudStatus('Offline / lokal visning', false);
-    } finally {
-      if (window.hideLoading) window.hideLoading();
-      if (typeof drawWelcomeClock === 'function') drawWelcomeClock();
-    }
-  }
-
-  setTimeout(syncCloudToLocal, 50);
 </script>
 </body>
 </html>
